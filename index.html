@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>بداية المجتهد — الأدلة وطرق الاستنباط</title>
+    <meta
+      name="description"
+      content="عرض تفاعلي لمسائل «بداية المجتهد ونهاية المقتصد» لابن رشد الحفيد، مبنيٌّ على الأدلة وأسباب الاختلاف وطرق الاستنباط، لبناء ملكة الاجتهاد."
+    />
+    <meta name="color-scheme" content="light dark" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>"
+    />
+  </head>
+
+  <body>
+    <header class="shirit">
+      <button
+        class="zir zir--ayqona zir-fahras"
+        id="zir-fahras"
+        aria-label="الفهرس"
+        aria-expanded="false"
+      >
+        ☰
+      </button>
+
+      <a
+        class="shirit__ism"
+        href="#/"
+        style="text-decoration: none"
+        title="الصفحة الأولى"
+      >
+        بداية المجتهد
+        <span>الأدلة وطرق الاستنباط</span>
+      </a>
+
+      <div class="shirit__fasl"></div>
+
+      <div class="bahth">
+        <span class="bahth__ayqona" aria-hidden="true">🔍</span>
+        <input
+          type="search"
+          id="haql-bahth"
+          placeholder="ابحث في المسائل والأدلة… (/)"
+          aria-label="بحث"
+          autocomplete="off"
+        />
+      </div>
+
+      <button class="zir" id="zir-marashih" aria-expanded="false">
+        <span aria-hidden="true">⚙</span><span class="zir__lafz">المرشِّحات</span>
+      </button>
+
+      <button class="zir" id="zir-tadrib" aria-pressed="false">
+        <span aria-hidden="true">✎</span><span class="zir__lafz">وضع التدريب</span>
+      </button>
+
+      <button class="zir zir--ayqona" id="zir-hajm" aria-label="حجم الخط">
+        <span aria-hidden="true">ت</span><small>ت</small>
+      </button>
+
+      <button class="zir zir--ayqona" id="zir-sima" aria-label="الوضع الليلي">
+        ☾
+      </button>
+    </header>
+
+    <div class="marashih" id="marashih" role="region" aria-label="المرشحات"></div>
+
+    <div class="hikal">
+      <nav class="fahras" id="fahras" aria-label="فهرس المسائل"></nav>
+      <main class="matn" id="matn" tabindex="-1"></main>
+    </div>
+
+    <div class="hijab" id="hijab"></div>
+
+    <footer class="hashiya-sufla">
+      <p>
+        <strong>النص:</strong> «بداية المجتهد ونهاية المقتصد» لأبي الوليد محمد بن
+        أحمد بن رشد القرطبي الحفيد (ت ٥٩٥هـ)، طبعة دار الحديث — القاهرة
+        ١٤٢٥هـ/٢٠٠٤م، عن نسخة المكتبة الشاملة رقم ٢١٧٣٩ عبر مدونة
+        <a href="https://github.com/OpenITI" rel="noopener">OpenITI</a> المفتوحة.
+      </p>
+      <p>
+        كلُّ ما جاء في إطار النص أو بخط النسخ فهو <strong>كلام ابن رشد بحروفه</strong>،
+        وأرقام الأجزاء والصفحات مأخوذة من علامات الصفحات في المصدر. وكلُّ ما
+        وُسِم بـ«شرح المحرِّر» أو جاء في شجرة الاستنباط والتدريب فهو من عمل
+        المحرِّر لا من الكتاب. ويُرجع إلى المطبوع عند الاعتماد في بحث أو فتوى.
+      </p>
+    </footer>
+
+    <script src="data/nusus.js"></script>
+    <script src="data/tahlil.js"></script>
+    <script src="assets/js/core.js"></script>
+    <script src="assets/js/search.js"></script>
+    <script src="assets/js/tree.js"></script>
+    <script src="assets/js/tadrib.js"></script>
+    <script src="assets/js/render.js"></script>
+  </body>
+</html>

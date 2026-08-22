@@ -126,8 +126,11 @@ for (const [id, t] of Object.entries(tahlil)) {
       khata(`${id}.shajarat_al_istinbat[${i}]`, "مسارٌ أقل من عقدتين");
   });
 
-  if (!t.sabab || !t.sabab.nass) khata(id, "لا سبب اختلاف");
-  else if (!(t.sabab.anwa || []).length) khata(id, "سببٌ بلا تصنيف (anwa)");
+  // المباحث التي حكى فيها ابن رشد اتفاقًا لا خلافًا لا سببَ لها،
+  // فلا يُطلب السبب إلا حيث تعددت الأقوال
+  if (!t.sabab || !t.sabab.nass) {
+    if (aqwal.length >= 2) khata(id, "أقوالٌ متعددة بلا سبب اختلاف");
+  } else if (!(t.sabab.anwa || []).length) khata(id, "سببٌ بلا تصنيف (anwa)");
 
   const tadrib = t.tadrib || [];
   if (tadrib.length < 2) khata(id, "أقل من سؤالي تدريب");

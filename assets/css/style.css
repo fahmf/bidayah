@@ -540,6 +540,46 @@ button {
   color: var(--hadith);
 }
 
+/* صياغة المحرِّر للحجة العقلية: تُعرض بالخط الكبير لأنها المفهومة،
+   وتُميَّز عن نص الكتاب بعلامةٍ في حاشيتها */
+.dalil__matn--sigha {
+  border-inline-start: 3px solid var(--dhahab-2);
+  padding-inline-start: 1rem;
+  margin-inline: 1.25rem;
+  padding-block: 0.4rem;
+  position: relative;
+}
+
+.dalil__matn--sigha::before {
+  content: "صياغة المحرِّر للحجة";
+  display: block;
+  font-family: var(--khat-ui);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--dhahab);
+  letter-spacing: 0.03em;
+  line-height: 1.6;
+  margin-bottom: 0.2rem;
+}
+
+.dalil__lafz {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.7rem 1.25rem 1rem;
+}
+
+.dalil__lafz-unwan {
+  flex: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--midad-3);
+  border: 1px solid var(--hashiya);
+  border-radius: 999px;
+  padding: 0.05rem 0.55rem;
+}
+
 .dalil__wajh {
   padding: 0.9rem 1.25rem;
   border-top: 1px dashed var(--hashiya);

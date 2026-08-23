@@ -158,19 +158,43 @@
     );
   }
 
+  /**
+   * هل النصّان مؤدّاهما واحد؟
+   * إذا صيغت الحجةُ العقلية في `sigha` فقد يكون شرحُ وجه الاستدلال معادًا
+   * بلفظٍ قريب، فيُستغنى عنه لئلا يقرأ الطالبُ الشيء مرتين.
+   */
+  const kalimat = (s) =>
+    new Set(
+      BM.tanzif(String(s || ""))
+        .split(/[^\u0621-\u064A]+/)
+        .filter((k) => k.length > 2),
+    );
+
+  const mutashabih = (a, b) => {
+    const x = kalimat(a);
+    const y = kalimat(b);
+    if (!x.size || !y.size) return false;
+    let mushtarak = 0;
+    x.forEach((k) => {
+      if (y.has(k)) mushtarak++;
+    });
+    return mushtarak / Math.min(x.size, y.size) >= 0.72;
+  };
+
   function bitaqatDalil(d, qawl) {
     const taraz = tarazDalil(d);
     const qail = ((qawl && qawl.qailun) || []).map((r) => r.ism).join("، ");
 
     const wajh = d.wajh_al_istidlal || {};
+    const sharh = d.sigha && mutashabih(d.sigha, wajh.sharh) ? "" : wajh.sharh;
     const wajhHtml =
-      wajh.nass || wajh.sharh
+      wajh.nass || sharh
         ? `<div class="dalil__wajh">` +
           `<div class="dalil__wajh-unwan">وجه الاستدلال</div>` +
           (wajh.nass
             ? `<div class="nass-manqul">${nassIbnRushd(wajh.nass)}</div>`
             : "") +
-          (wajh.sharh ? `<div class="sharh">${nassIbnRushd(wajh.sharh)}</div>` : "") +
+          (sharh ? `<div class="sharh">${nassIbnRushd(sharh)}</div>` : "") +
           `</div>`
         : "";
 
@@ -202,7 +226,14 @@
         : "") +
       (d.takhrij ? `<span class="dalil__takhrij">${BM.himaya(d.takhrij)}</span>` : "") +
       `</div>` +
-      `<p class="dalil__matn">${nassIbnRushd(d.matn)}</p>` +
+      // الأدلة العقلية كثيرًا ما لا يكون لها في الكتاب متنٌ مستقل يُقتبس،
+      // وإنما يصف ابن رشد الحجة وصفًا. فإن وُجدت صياغةٌ للمحرِّر عُرضت هي
+      // بالخط الكبير — إذ هي المفهومة — وبقي لفظُ ابن رشد تحتها سندًا لها.
+      (d.sigha
+        ? `<p class="dalil__matn dalil__matn--sigha">${nassIbnRushd(d.sigha)}</p>` +
+          `<div class="dalil__lafz"><span class="dalil__lafz-unwan">بلفظ ابن رشد</span>` +
+          `<span class="nass-manqul">${nassIbnRushd(d.matn)}</span></div>`
+        : `<p class="dalil__matn">${nassIbnRushd(d.matn)}</p>`) +
       wajhHtml +
       (itiradat ? `<div style="padding:0 1.25rem 1rem">${itiradat}</div>` : "") +
       `</article>`

@@ -11,6 +11,38 @@
 
   const HURUF = "أبجدهـوز";
 
+  /**
+   * ترتيب الخيارات:
+   * كُتبت الأجوبة الصحيحة في البيانات على نسقٍ واحد غالبًا، فلو عُرضت على
+   * ترتيبها لأمكن أن يُصاب الجواب بالعادة لا بالنظر — وذلك ينقض مقصود التدريب.
+   * فتُخلط الخيارات بترتيبٍ مشتقٍّ من معرّف المسألة ورقم السؤال، فهو ثابتٌ
+   * للمسألة الواحدة (لا يتبدّل عند كل تحميل) ومختلفٌ بين المسائل.
+   */
+  const bidhra = (nass) => {
+    let h = 2166136261;
+    for (let i = 0; i < nass.length; i++) {
+      h ^= nass.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return () => {
+      h ^= h << 13;
+      h ^= h >>> 17;
+      h ^= h << 5;
+      return ((h >>> 0) % 1000) / 1000;
+    };
+  };
+
+  /** يعيد ترتيب العرض: مصفوفة من الفهارس الأصلية */
+  const rattib = (masalaId, raqmSual, adad) => {
+    const rand = bidhra(masalaId + ":" + raqmSual);
+    const tartib = Array.from({ length: adad }, (_, i) => i);
+    for (let i = adad - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [tartib[i], tartib[j]] = [tartib[j], tartib[i]];
+    }
+    return tartib;
+  };
+
   /** رسم أسئلة مسألة واحدة */
   BM.arsimTadrib = (masala) => {
     const asila = masala.tadrib || [];
@@ -18,12 +50,13 @@
 
     const bitaqat = asila
       .map((s, i) => {
-        const khiyarat = (s.khiyarat || [])
+        const tartib = rattib(masala.id, i, (s.khiyarat || []).length);
+        const khiyarat = tartib
           .map(
-            (kh, j) =>
-              `<button class="khiyar" data-sual="${i}" data-khiyar="${j}">` +
+            (asl, j) =>
+              `<button class="khiyar" data-sual="${i}" data-khiyar="${asl}">` +
               `<span class="khiyar__harf">${HURUF[j] || j + 1}</span>` +
-              `<span>${BM.lawwinNusus(BM.himaya(kh))}</span>` +
+              `<span>${BM.lawwinNusus(BM.himaya(s.khiyarat[asl]))}</span>` +
               `</button>`,
           )
           .join("");

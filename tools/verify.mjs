@@ -2,17 +2,24 @@
  * verify.mjs — التحقق من سلامة البيانات وحرفية الاقتباس.
  *
  * أهم ما يفعله: يتأكد أن كل نصٍّ نُسِب إلى ابن رشد في data/tahlil.js
- * موجودٌ بحروفه في المصدر masdar/bidayah-thaharah.txt. فإن اختلف حرفٌ
+ * موجودٌ بحروفه في مصدر قسمِه المسجَّل في tools/aqsam.mjs. فإن اختلف حرفٌ
  * واحد سقط البناء، فليست دعوى الحرفية وعدًا بل شرطًا يفحصه الحاسوب.
+ *
+ * والمقابلة تكون بمصدر القسم وحدَه لا بمجموع المصادر: فلو قُوبل اقتباسُ
+ * «كتاب الصلاة» بنصّ «كتاب الطهارة» لجاز أن يمرّ اقتباسٌ نُسب إلى موضعه
+ * الخطأ ما دام لفظُه موجودًا في مكانٍ ما من الكتاب.
  *
  * التشغيل: node tools/verify.mjs
  */
 
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { AQSAM, badiat, qismWahda, tahaqqaqMinSijill } from "./aqsam.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+tahaqqaqMinSijill();
 
 /* ————— تحميل البيانات ————— */
 
@@ -26,7 +33,6 @@ tahmil("data/nusus.js");
 tahmil("data/tahlil.js");
 
 const { nusus, fahras, tahlil } = win.BIDAYAH;
-const MASDAR = readFileSync(resolve(ROOT, "masdar/bidayah-thaharah.txt"), "utf8");
 
 /* ————— التطبيع قبل المقارنة —————
    نُسقِط علامات الاقتباس والأقواس فقط، ونوحّد الفراغات.
@@ -47,7 +53,22 @@ const nassKhalis = (raw) =>
     .map((l) => l.replace(/^### \|+\s*/, " ").replace(/^# /, " ").replace(/^~~/, " "))
     .join(" ");
 
-const MASDAR_MUSAWWA = sawwi(nassKhalis(MASDAR));
+/* مصدرُ كل قسمٍ على حدة، مسوّىً مرةً واحدة */
+const MASADIR = new Map();
+for (const qism of AQSAM) {
+  const masar = resolve(ROOT, qism.masdar);
+  if (!existsSync(masar)) {
+    console.error(`\n  ✘ ${qism.muarrif}: لا يوجد ${qism.masdar}\n`);
+    process.exit(1);
+  }
+  MASADIR.set(qism.muarrif, sawwi(nassKhalis(readFileSync(masar, "utf8"))));
+}
+
+/** مصدر القسم الذي ينتمي إليه معرّفُ الوحدة، أو null إن كانت البادئة مجهولة */
+const masdarWahda = (muarrif) => {
+  const qism = qismWahda(muarrif);
+  return qism ? MASADIR.get(qism.muarrif) : null;
+};
 
 /* ————— جمع الأخطاء ————— */
 
@@ -61,19 +82,25 @@ const HUQUL_NASS = new Set(["nass", "matn", "jawab"]);
 
 let adadIqtibas = 0;
 
-function tafahhas(qima, masar) {
+function tafahhas(qima, masar, nassMasdar) {
   if (qima == null) return;
 
   if (Array.isArray(qima)) {
-    qima.forEach((q, i) => tafahhas(q, `${masar}[${i}]`));
+    qima.forEach((q, i) => tafahhas(q, `${masar}[${i}]`, nassMasdar));
     return;
   }
 
   if (typeof qima === "object") {
     for (const [miftah, q] of Object.entries(qima)) {
-      // العقد في شجرة الاستنباط صياغةُ محرِّرٍ لا نصُّ كتاب
-      if (miftah === "uqad" || miftah === "mustalahat" || miftah === "tadrib") continue;
-      tafahhas(q, `${masar}.${miftah}`);
+      // صياغةُ المحرِّر وعقدُ شجرة الاستنباط ليست نصَّ كتابٍ فلا تُقابَل به
+      if (
+        miftah === "uqad" ||
+        miftah === "mustalahat" ||
+        miftah === "tadrib" ||
+        miftah === "sigha"
+      )
+        continue;
+      tafahhas(q, `${masar}.${miftah}`, nassMasdar);
     }
     return;
   }
@@ -84,11 +111,18 @@ function tafahhas(qima, masar) {
   if (!HUQUL_NASS.has(miftah)) return;
 
   adadIqtibas++;
-  if (!MASDAR_MUSAWWA.includes(sawwi(qima)))
-    khata(masar, `اقتباس غير موجود بحروفه في المصدر:\n      «${qima.slice(0, 120)}…»`);
+  if (!nassMasdar.includes(sawwi(qima)))
+    khata(masar, `اقتباس غير موجود بحروفه في مصدر القسم:\n      «${qima.slice(0, 120)}…»`);
 }
 
-for (const [id, t] of Object.entries(tahlil)) tafahhas(t, id);
+for (const [id, t] of Object.entries(tahlil)) {
+  const nassMasdar = masdarWahda(id);
+  if (!nassMasdar) {
+    khata(id, `بادئة «${badiat(id)}» ليست في سجلّ الأقسام tools/aqsam.mjs`);
+    continue;
+  }
+  tafahhas(t, id, nassMasdar);
+}
 
 /* ————— ٢: سلامة البنية ————— */
 
@@ -149,9 +183,15 @@ for (const m of nusus) {
   if (!m.unwan) khata(m.id, "بلا عنوان");
   if (!m.fiqar || !m.fiqar.length) khata(m.id, "بلا فقرات");
   fiqarKull += (m.fiqar || []).length;
+
+  const nassMasdar = masdarWahda(m.id);
+  if (!nassMasdar) {
+    khata(m.id, `بادئة «${badiat(m.id)}» ليست في سجلّ الأقسام tools/aqsam.mjs`);
+    continue;
+  }
   for (const f of m.fiqar || [])
-    if (!MASDAR_MUSAWWA.includes(sawwi(f.matn)))
-      khata(m.id, `فقرة مولَّدة لا تطابق المصدر: «${f.matn.slice(0, 80)}…»`);
+    if (!nassMasdar.includes(sawwi(f.matn)))
+      khata(m.id, `فقرة مولَّدة لا تطابق مصدر القسم: «${f.matn.slice(0, 80)}…»`);
 }
 
 const muarrifatFahras = new Set(
@@ -165,6 +205,16 @@ for (const m of nusus)
 const raqm = (n) => String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[+d]);
 
 console.log("");
+if (AQSAM.length > 1)
+  for (const qism of AQSAM) {
+    const wahdat = nusus.filter((m) => badiat(m.id) === qism.muarrif);
+    const muhallala = wahdat.filter((m) => tahlil[m.id]).length;
+    console.log(
+      `  ${qism.muarrif.padEnd(4)} ${qism.qism.padEnd(18)} ` +
+        `${raqm(wahdat.length)} وحدة، محلَّلة منها ${raqm(muhallala)}`,
+    );
+  }
+if (AQSAM.length > 1) console.log("");
 console.log("  المسائل والمباحث   : " + raqm(nusus.length));
 console.log("  منها محلَّلة        : " + raqm(Object.keys(tahlil).length));
 console.log("  الفقرات المولَّدة   : " + raqm(fiqarKull) + " (كلها مطابقة للمصدر)");

@@ -1,18 +1,18 @@
 /*
  * ingest.mjs — تحويل نص «بداية المجتهد» (صيغة OpenITI) إلى بيانات الموقع.
  *
- * المصدر: masdar/bidayah-thaharah.txt  (المكتبة الشاملة ٢١٧٣٩، طبعة دار الحديث)
- * الخرج:  data/nusus.js  — نصّ ابن رشد بحروفه، لا يُحرَّر باليد أبدًا.
+ * المصادر: الأقسام المسجَّلة في tools/aqsam.mjs، كلٌّ من ملفّه في masdar/.
+ * الخرج:   data/nusus.js — نصّ ابن رشد بحروفه، لا يُحرَّر باليد أبدًا.
  *
  * التشغيل: node tools/ingest.mjs
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { AQSAM, MASDAR, muarrifWahda, tahaqqaqMinSijill } from "./aqsam.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const SRC = resolve(ROOT, "masdar/bidayah-thaharah.txt");
 const OUT = resolve(ROOT, "data/nusus.js");
 
 /* ————— أدوات ————— */
@@ -163,7 +163,7 @@ function istakhrijNusus(matn) {
   return out;
 }
 
-function ibniShajara(items) {
+function ibniShajara(items, qism) {
   const kutub = [];
   let kitab = null;
   let bab = null;
@@ -176,7 +176,7 @@ function ibniShajara(items) {
     masala = null;
   };
   const babJadid = (matn, mawdi) => {
-    if (!kitab) kitabJadid("كتاب الطهارة", mawdi);
+    if (!kitab) kitabJadid(qism.qism, mawdi);
     bab = { unwan: matn, mawdi, tamhid: [], masail: [] };
     kitab.abwab.push(bab);
     masala = null;
@@ -272,7 +272,7 @@ function ibniShajara(items) {
 
 /* ————— المرحلة ٣: تسوية الخرج ————— */
 
-function sawwi(kutub) {
+function sawwi(kutub, qism) {
   const masail = [];
   let raqm = 0;
   for (const kitab of kutub)
@@ -285,9 +285,10 @@ function sawwi(kutub) {
         for (let i = 1; i < fiqar.length && !unwanKafin(m.unwan); i++)
           m.unwan = unwanMukhtasar(fiqar[i].matn);
         masail.push({
-          id: `th-${String(m.raqm).padStart(3, "0")}`,
+          id: muarrifWahda(qism, m.raqm),
           raqm: m.raqm,
           naw: m.naw,
+          qism: qism.qism,
           unwan: m.unwan,
           kitab: kitab.unwan,
           bab: bab.unwan,
@@ -302,11 +303,12 @@ function sawwi(kutub) {
 
   const fahras = kutub.map((k) => ({
     unwan: k.unwan,
+    qism: qism.qism,
     abwab: k.abwab.map((b) => ({
       unwan: b.unwan,
       mawdi: b.mawdi,
       tamhid: b.tamhid.map((f) => ({ matn: f.matn, mawdi: f.mawdi })),
-      masail: b.masail.map((m) => `th-${String(m.raqm).padStart(3, "0")}`),
+      masail: b.masail.map((m) => muarrifWahda(qism, m.raqm)),
     })),
   }));
 
@@ -325,17 +327,52 @@ const dedupe = (arr) => {
 
 /* ————— التشغيل ————— */
 
-const raw = readFileSync(SRC, "utf8");
-const items = faqqirNass(raw);
-const shajara = ibniShajara(items);
-const data = sawwi(shajara);
+tahaqqaqMinSijill();
+
+const fahras = [];
+const masail = [];
+
+for (const qism of AQSAM) {
+  const src = resolve(ROOT, qism.masdar);
+  if (!existsSync(src)) {
+    console.error(
+      `\n  ✘ ${qism.muarrif}: لا يوجد ${qism.masdar}\n` +
+        `    اقتطعه أولًا: node tools/istikhraj.mjs <ملف OpenITI الكامل> ${qism.muarrif}\n`,
+    );
+    process.exit(1);
+  }
+
+  const shajara = ibniShajara(faqqirNass(readFileSync(src, "utf8")), qism);
+  const data = sawwi(shajara, qism);
+
+  if (!data.masail.length) {
+    console.error(`\n  ✘ ${qism.muarrif}: لم تُستخرج أي وحدة من ${qism.masdar}\n`);
+    process.exit(1);
+  }
+
+  fahras.push(...data.fahras);
+  masail.push(...data.masail);
+
+  const bilaSabab = data.masail.filter((m) => !m.sabab).length;
+  console.log(
+    `  ✔ ${qism.muarrif.padEnd(4)} ${qism.qism.padEnd(18)} ` +
+      `${String(data.masail.length).padStart(3)} وحدة | ` +
+      `${data.fahras.length} كتاب | ` +
+      `${data.fahras.reduce((a, k) => a + k.abwab.length, 0)} باب | ` +
+      `بلا فقرة «سبب اختلافهم»: ${bilaSabab}`,
+  );
+}
+
+/* المعرّفات هي مفاتيح data/tahlil.js، فتكرارُها يُسقط تحليلًا كاملًا بلا ضجيج */
+const mukarrar = masail.map((m) => m.id).filter((id, i, a) => a.indexOf(id) !== i);
+if (mukarrar.length) {
+  console.error(`\n  ✘ معرّفات مكررة بين الأقسام: ${[...new Set(mukarrar)].join(", ")}\n`);
+  process.exit(1);
+}
 
 const masdar = {
-  kitab: "بداية المجتهد ونهاية المقتصد",
-  muallif: "أبو الوليد محمد بن أحمد بن رشد القرطبي الحفيد (ت ٥٩٥هـ)",
-  tabaa: "دار الحديث — القاهرة، ١٤٢٥هـ/٢٠٠٤م",
-  masdar_raqami: "المكتبة الشاملة رقم ٢١٧٣٩ عبر مدونة OpenITI المفتوحة",
-  qism: "كتاب الطهارة",
+  ...MASDAR,
+  aqsam: AQSAM.map((q) => ({ muarrif: q.muarrif, qism: q.qism, masdar: q.masdar })),
 };
 
 writeFileSync(
@@ -344,16 +381,12 @@ writeFileSync(
    نصّ ابن رشد بحروفه من ${masdar.masdar_raqami}. */
 window.BIDAYAH = window.BIDAYAH || {};
 window.BIDAYAH.masdar = ${JSON.stringify(masdar, null, 2)};
-window.BIDAYAH.fahras = ${JSON.stringify(data.fahras, null, 1)};
-window.BIDAYAH.nusus = ${JSON.stringify(data.masail, null, 1)};
+window.BIDAYAH.fahras = ${JSON.stringify(fahras, null, 1)};
+window.BIDAYAH.nusus = ${JSON.stringify(masail, null, 1)};
 `,
   "utf8",
 );
 
-const bilaSabab = data.masail.filter((m) => !m.sabab).length;
 console.log(
-  `✔ ${data.masail.length} مسألة | ${data.fahras.length} كتاب | ` +
-    `${data.fahras.reduce((a, k) => a + k.abwab.length, 0)} باب | ` +
-    `بلا فقرة «سبب اختلافهم»: ${bilaSabab}`,
+  `\n✔ ${masail.length} وحدة من ${AQSAM.length} قسم → ${OUT.replace(ROOT + "/", "")}\n`,
 );
-console.log(`✔ كُتب ${OUT}`);

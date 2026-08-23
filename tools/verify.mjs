@@ -126,6 +126,81 @@ for (const [id, t] of Object.entries(tahlil)) {
 
 /* ————— ٢: سلامة البنية ————— */
 
+/* ————— تحرير محل النزاع —————
+   وقعت هنا عِلّةٌ خفيّة: أُخذ لخمسٍ وعشرين وحدةً كلامٌ من سياق «وسبب اختلافهم…»
+   ووُضع تحت عنوان «موضع الخلاف»، فصار الشيءُ الواحد يُعرض مرتين في الصفحة —
+   مرةً محلًّا للنزاع ومرةً سببًا له — وبعضُه شذرةٌ معلَّقة لا تُفهم («وسبب
+   اختلافهم في ذلك هو شيئان»). وفي بعضها ما هو أسوأ: نصُّ قولٍ منسوبٍ إلى
+   قائله، وهو يُعرض في وضع التدريب فيكشف الجواب قبل السؤال.
+
+   والقاعدة: محلُّ النزاع بيانُ *ما* اختُلف فيه، قبل ذكر أحدٍ من الأقوال. */
+
+const kalimat = (nass) =>
+  new Set(
+    String(nass)
+      .replace(/[\u064B-\u0652\u0640]/g, "")
+      .split(/[^\u0621-\u064A]+/)
+      .filter((k) => k.length > 2),
+  );
+
+/** نسبة ما في «a» من كلماتٍ موجودةٍ في «b» */
+const nisbatTadakhul = (a, b) => {
+  const x = kalimat(a);
+  const y = kalimat(b);
+  if (!x.size) return 0;
+  let mushtarak = 0;
+  x.forEach((k) => {
+    if (y.has(k)) mushtarak++;
+  });
+  return mushtarak / x.size;
+};
+
+const LAFZ_SABAB = /سبب (?:اختلافهم|الخلاف)|السبب في اختلافهم|وسبب الخلاف/;
+
+function tafahhasTahrir(id, t) {
+  const nizaa = t.mahall_al_nizaa;
+  const sababNass = (t.sabab && t.sabab.nass) || "";
+  const ittifaq = t.mahall_al_ittifaq || [];
+
+  // لا يُنقل شيءٌ من سياق «وسبب اختلافهم…» إلى هذا القسم، في الطرفين
+  for (const [masar, nass] of [
+    ...(nizaa ? [[`${id}.mahall_al_nizaa`, nizaa.nass]] : []),
+    ...ittifaq.map((b, i) => [`${id}.mahall_al_ittifaq[${i}]`, b.nass]),
+  ])
+    if (nass && LAFZ_SABAB.test(nass))
+      khata(masar, "هذا سببُ الاختلاف لا محلُّه — وله لوحتُه أسفل الصفحة");
+
+  /* ما وقع عليه الاتفاق قد يكون مقدّمةً يبني عليها ابنُ رشد سببَ الاختلاف،
+     فتداخلُ ألفاظهما وارد. وإنما يُمنع أن يُعاد هنا متنُ دليلٍ يُعرض بالخط
+     الكبير أسفلَه — فذلك تكرارٌ محض. */
+  ittifaq.forEach((b, i) => {
+    if (!b.nass) return;
+    for (const q of t.aqwal || [])
+      for (const dalil of q.adilla || [])
+        if (dalil.matn && nisbatTadakhul(b.nass, dalil.matn) >= 0.9)
+          khata(
+            `${id}.mahall_al_ittifaq[${i}]`,
+            "مكرَّرٌ في بطاقة دليلٍ أسفله، فيُقرأ الشيءُ الواحد مرتين",
+          );
+  });
+
+  if (!nizaa || !nizaa.nass) return;
+
+  /* محلُّ النزاع بيانُ *ما* اختُلف فيه، والسببُ بيانُ *لِمَ* اختُلف — فإن
+     تطابقا فأحدهما مُساءُ الوضع، ويُعرض النصُّ الواحد مرتين في صفحةٍ واحدة. */
+  if (sababNass && nisbatTadakhul(nizaa.nass, sababNass) >= 0.9)
+    khata(`${id}.mahall_al_nizaa`, "مكرَّرٌ في لوحة سبب الاختلاف، فيُقرأ الشيءُ الواحد مرتين");
+
+  // ويُعرض في وضع التدريب، فلا يجوز أن يحمل قولًا منسوبًا إلى قائله
+  (t.aqwal || []).forEach((q, i) => {
+    if (q.nass && nisbatTadakhul(q.nass, nizaa.nass) >= 0.6)
+      khata(
+        `${id}.mahall_al_nizaa`,
+        `يكشف القول aqwal[${i}] فيُفسد وضعَ التدريب:\n      «${q.nass.slice(0, 80)}…»`,
+      );
+  });
+}
+
 const bilMuarrif = new Map(nusus.map((n) => [n.id, n]));
 
 for (const [id, t] of Object.entries(tahlil)) {
@@ -134,6 +209,8 @@ for (const [id, t] of Object.entries(tahlil)) {
     khata(id, "معرّف لا يقابله نصٌّ في data/nusus.js");
     continue;
   }
+
+  tafahhasTahrir(id, t);
 
   const aqwal = t.aqwal || [];
   if (!aqwal.length) khata(id, "لا أقوال");
@@ -146,6 +223,13 @@ for (const [id, t] of Object.entries(tahlil)) {
     if (!q.adilla || !q.adilla.length) khata(`${id}.aqwal[${i}]`, "قولٌ بلا دليل");
     (q.adilla || []).forEach((d, j) => {
       if (!d.matn) khata(`${id}.aqwal[${i}].adilla[${j}]`, "دليلٌ بلا متن");
+      /* متنُ الدليل يُعرض بأكبر خطٍّ في الصفحة، فلا يكون سياقَ «وسبب اختلافهم…»:
+         ذاك بيانُ منشأ الخلاف، وله لوحتُه، وليس حجةً يُستدلّ بها. */
+      if (d.matn && LAFZ_SABAB.test(d.matn))
+        khata(
+          `${id}.aqwal[${i}].adilla[${j}]`,
+          "متنُ الدليل من سياق سبب الاختلاف، لا حجةً قائمة",
+        );
       if (!d.naw) khata(`${id}.aqwal[${i}].adilla[${j}]`, "دليلٌ بلا نوع (نقلي/عقلي)");
       const wajh = d.wajh_al_istidlal;
       if (!wajh || (!wajh.nass && !wajh.sharh))
@@ -164,7 +248,14 @@ for (const [id, t] of Object.entries(tahlil)) {
   // فلا يُطلب السبب إلا حيث تعددت الأقوال
   if (!t.sabab || !t.sabab.nass) {
     if (aqwal.length >= 2) khata(id, "أقوالٌ متعددة بلا سبب اختلاف");
-  } else if (!(t.sabab.anwa || []).length) khata(id, "سببٌ بلا تصنيف (anwa)");
+  } else {
+    if (!(t.sabab.anwa || []).length) khata(id, "سببٌ بلا تصنيف (anwa)");
+    /* لوحةُ السبب أبرزُ ما في الصفحة، فإن انتهى نصُّها بنقطتين وعد القارئَ
+       بتعدادٍ لا يأتي — كـ«وسبب اختلافهم في ذلك هو شيئان:». إما أن يُمدّ
+       النصُّ إلى ما يُبيّن، وإما أن يُقطع قبل الوعد. */
+    if (/[:]\s*$/.test(t.sabab.nass))
+      khata(id, "نصُّ السبب ينتهي بنقطتين، فيعد بتعدادٍ لا يأتي في اللوحة");
+  }
 
   const tadrib = t.tadrib || [];
   if (tadrib.length < 2) khata(id, "أقل من سؤالي تدريب");

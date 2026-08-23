@@ -77,11 +77,14 @@
     <div class="marashih" id="marashih" role="region" aria-label="المرشحات"></div>
 
     <div class="hikal">
+      <!-- الحجاب داخل .hikal قصدًا: .hikal ينشئ سياق تكديس (z-index: 1)،
+           فلو بقي الحجاب خارجه لعلا الفهرسَ مهما رُفع z-index الفهرس،
+           فتذهب لمساتُ الإصبع إليه لا إلى الفهرس فلا يُمرَّر. -->
+      <div class="hijab" id="hijab"></div>
       <nav class="fahras" id="fahras" aria-label="فهرس المسائل"></nav>
       <main class="matn" id="matn" tabindex="-1"></main>
     </div>
 
-    <div class="hijab" id="hijab"></div>
 
     <footer class="hashiya-sufla">
       <p>

@@ -677,11 +677,17 @@
   function iftahFahras() {
     elFahras.classList.add("fahras--maftuh");
     hijab.classList.add("hijab--zahir");
+    // تُجمَّد الصفحة خلفه، ولا يُغيَّر موضعُها حتى تعود كما كانت عند الإغلاق
+    document.body.classList.add("la-tamrir");
     zirFahras.setAttribute("aria-expanded", "true");
+    // يُجلب البندُ الجاري إلى المنظور، فالفهرس طويل والقارئ في وسطه غالبًا
+    const hali = elFahras.querySelector(".fahras__band--nashit");
+    if (hali) hali.scrollIntoView({ block: "center" });
   }
   function ighliqFahras() {
     elFahras.classList.remove("fahras--maftuh");
     hijab.classList.remove("hijab--zahir");
+    document.body.classList.remove("la-tamrir");
     zirFahras.setAttribute("aria-expanded", "false");
   }
 

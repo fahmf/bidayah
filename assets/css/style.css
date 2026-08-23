@@ -261,8 +261,12 @@ button {
   position: sticky;
   top: var(--shirit);
   height: calc(100vh - var(--shirit));
+  /* على الجوال يتغيّر ارتفاعُ المنظور بظهور شريط المتصفح واختفائه،
+     و100vh هو الارتفاع الأكبر دائمًا، فيقع أسفلُ الفهرس خارج الشاشة. */
+  height: calc(100dvh - var(--shirit));
   overflow-y: auto;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   border-inline-start: 1px solid var(--hashiya);
   background: var(--ard-2);
   padding: 1rem 0.85rem 3rem;
@@ -1371,7 +1375,10 @@ mark {
     display: none;
     position: fixed;
     top: var(--shirit);
-    inset-inline-end: 0;
+    /* من جهة البداية المنطقية: يمين الصفحة في RTL — وهي جهةُ الفهرس في
+       سطح المكتب وجهةُ زرّ فتحه، فلا ينقلب موضعُه على القارئ. */
+    inset-inline-start: 0;
+    inset-inline-end: auto;
     width: min(22rem, 88vw);
     z-index: 50;
     box-shadow: var(--zill-2);
@@ -1382,10 +1389,27 @@ mark {
     display: block;
   }
 
+  /* translateX فيزيائيّ لا منطقيّ، فتُعكس إشارتُه بحسب اتجاه الصفحة
+     ليأتي الدرجُ دائمًا من الجهة التي يستقرّ عليها */
   @keyframes inzilaq {
     from {
       opacity: 0;
       transform: translateX(1.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  [dir="ltr"] .fahras {
+    animation-name: inzilaq-yasar;
+  }
+
+  @keyframes inzilaq-yasar {
+    from {
+      opacity: 0;
+      transform: translateX(-1.5rem);
     }
     to {
       opacity: 1;
@@ -1403,6 +1427,12 @@ mark {
     inset: 0;
     background: rgba(20, 19, 15, 0.45);
     z-index: 45;
+  }
+
+  /* تُجمَّد الصفحة خلف الدرج: لولا ذلك لانزلق المتنُ تحت الحجاب عند
+     محاولة تمرير الفهرس، وهو ما لا يقصده القارئ. */
+  body.la-tamrir {
+    overflow: hidden;
   }
 
   .shirit__ism span {

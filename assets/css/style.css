@@ -15,7 +15,7 @@
   /* المداد */
   --midad: #26221b;
   --midad-2: #554d3f;
-  --midad-3: #8a7f6c;
+  --midad-3: #6f6553; /* أغمق مما كان: الحروف الصغيرة تحتاج تباينًا ٤٫٥:١ فأكثر */
 
   /* الذهب: للعناوين وسبب الاختلاف */
   --dhahab: #9a7422;
@@ -32,13 +32,10 @@
   --ijma: #6b3f77; /* إجماع: أرجواني */
   --ijma-khafif: #efe6f2;
 
-  /* المذاهب */
-  --maliki: #2c6b4f;
-  --hanafi: #38508c;
-  --shafii: #9c5424;
-  --hanbali: #6b3f77;
-  --zahiri: #99333f;
-  --sahabi: #554d3f;
+  /* الخطأ في التدريب.
+     ولا ألوان للمذاهب: الألوان محجوزةٌ لأصناف الأدلة وحدها، فلو لُوِّن بها
+     المذهبُ أيضًا لالتبس أخضرُ «المالكية» بأخضر «القرآن». */
+  --khata: #99333f;
 
   --zill: 0 1px 2px rgba(38, 34, 27, 0.06), 0 6px 18px rgba(38, 34, 27, 0.06);
   --zill-2: 0 2px 4px rgba(38, 34, 27, 0.08), 0 12px 34px rgba(38, 34, 27, 0.1);
@@ -80,11 +77,7 @@
   --ijma: #bf9ac9;
   --ijma-khafif: #211829;
 
-  --maliki: #6fbb92;
-  --hanafi: #8ea4e0;
-  --shafii: #d59668;
-  --hanbali: #bf9ac9;
-  --zahiri: #d9808c;
+  --khata: #d9808c;
 
   --zill: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 18px rgba(0, 0, 0, 0.35);
   --zill-2: 0 2px 6px rgba(0, 0, 0, 0.5), 0 14px 38px rgba(0, 0, 0, 0.45);
@@ -160,6 +153,7 @@ button {
 }
 
 .shirit__ism {
+  text-decoration: none;
   font-family: var(--khat-nass);
   font-size: 1.5rem;
   font-weight: 700;
@@ -208,7 +202,42 @@ button {
   transform: translateY(-50%);
   color: var(--midad-3);
   pointer-events: none;
-  font-size: 0.95rem;
+}
+
+/* ————— الأيقونات ————— */
+
+.ayqona {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* القمر في الوضع النهاري والشمس في الليلي: الزرّ يدلّ على ما سيصير إليه */
+.ayqona--shams,
+:root[data-theme="dark"] .ayqona--qamar {
+  display: none;
+}
+
+:root[data-theme="dark"] .ayqona--shams {
+  display: block;
+}
+
+/* عناصر الجوال: مخفيةٌ على الشاشة الواسعة.
+   مسبوقةٌ بـ.shirit لتغلب display في .zir المعرَّفة بعدها */
+.shirit .zir-bahth,
+.shirit .zir-ziyada,
+.shirit .bahth__ighlaq,
+.shirit .zir__lafz-ziyada {
+  display: none;
+}
+
+.shirit__ziyada {
+  display: contents;
 }
 
 .zir {
@@ -429,7 +458,8 @@ button {
 
 .qism {
   margin-bottom: 2.4rem;
-  scroll-margin-top: calc(var(--shirit) + 1rem);
+  /* الشريط العلوي + شريط الأقسام اللاصق */
+  scroll-margin-top: calc(var(--shirit) + 4rem);
 }
 
 .qism__unwan {
@@ -491,6 +521,21 @@ button {
 .dalil--ijma {
   --lawn: var(--ijma);
   --lawn-khafif: var(--ijma-khafif);
+}
+/* موضع الخلاف: بالذهب، لونِ الخلاف وسببه في الموقع كله */
+.dalil--khilaf {
+  --lawn: var(--dhahab);
+  --lawn-khafif: var(--dhahab-khafif);
+}
+/* ما ليس دليلًا (تلخيص الأقوال والترجيح): محايدٌ لا يُشبه صنفًا من الأدلة */
+.dalil--mahayid {
+  --lawn: var(--midad-2);
+  --lawn-khafif: var(--ard-3);
+}
+
+.tahrir__bunud {
+  margin: 0;
+  padding: 1rem 2.2rem;
 }
 
 .dalil__ras {
@@ -643,7 +688,7 @@ button {
   background: var(--ard-2);
   padding: 1rem 1.1rem;
   box-shadow: var(--zill);
-  border-top: 4px solid var(--lawn-qawl, var(--hashiya-2));
+  border-top: 4px solid var(--hashiya-2);
 }
 
 .qawl__raqm {
@@ -672,24 +717,17 @@ button {
   padding: 0.15rem 0.6rem;
   border-radius: 999px;
   font-size: 0.82rem;
-  border: 1px solid currentColor;
+  color: var(--midad);
+  border: 1px solid var(--hashiya-2);
   background: var(--ard);
 }
 
-.qail[data-madhhab="المالكية"] {
-  color: var(--maliki);
-}
-.qail[data-madhhab="الحنفية"] {
-  color: var(--hanafi);
-}
-.qail[data-madhhab="الشافعية"] {
-  color: var(--shafii);
-}
-.qail[data-madhhab="الحنابلة"] {
-  color: var(--hanbali);
-}
-.qail[data-madhhab="الظاهرية"] {
-  color: var(--zahiri);
+.qail__madhhab {
+  font-size: 0.72rem;
+  color: var(--midad-3);
+  padding-inline-start: 0.4rem;
+  margin-inline-start: 0.4rem;
+  border-inline-start: 1px solid var(--hashiya);
 }
 
 /* ————— جدول المقارنة ————— */
@@ -825,13 +863,16 @@ button {
   background: var(--ard-2);
   padding: 0.9rem 1rem;
   box-shadow: var(--zill);
-  border-inline-start: 5px solid var(--lawn-qawl, var(--hashiya-2));
+  border-inline-start: 5px solid var(--dhahab-2);
 }
 
 .masar__ism {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
   font-size: 0.85rem;
   font-weight: 700;
-  color: var(--lawn-qawl, var(--midad-2));
+  color: var(--midad-2);
   writing-mode: vertical-rl;
   text-orientation: mixed;
   max-height: 9rem;
@@ -839,7 +880,16 @@ button {
   border-inline-end: 1px solid var(--hashiya);
 }
 
+.masar__raqm {
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--midad-3);
+}
+
 .uqad {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   align-items: stretch;
   gap: 0;
@@ -862,11 +912,11 @@ button {
   margin-inline-start: 0;
 }
 
-/* السهم بين العقد — من اليمين إلى اليسار */
+/* السهم بين العقد: في الفجوة التي قبل العقدة (جهةَ بدايتها)، متجهًا إليها */
 .uqda:not(:first-child)::before {
   content: "";
   position: absolute;
-  inset-inline-end: -1.1rem;
+  inset-inline-start: -1.1rem;
   top: 50%;
   width: 1.1rem;
   height: 2px;
@@ -876,12 +926,12 @@ button {
 .uqda:not(:first-child)::after {
   content: "";
   position: absolute;
-  inset-inline-end: -0.35rem;
+  inset-inline-start: -7px;
   top: 50%;
   transform: translateY(-50%);
   border-block: 5px solid transparent;
-  border-inline-start: 0;
-  border-inline-end: 7px solid var(--hashiya-2);
+  border-inline-end: 0;
+  border-inline-start: 7px solid var(--hashiya-2);
 }
 
 .uqda__naw {
@@ -899,28 +949,32 @@ button {
   color: var(--midad);
 }
 
-.uqda--nass {
-  background: var(--hadith-khafif);
-  border-color: color-mix(in srgb, var(--hadith) 35%, transparent);
-}
-.uqda--nass .uqda__naw {
-  color: var(--hadith);
-}
-
-.uqda--dalala {
+/* عقدة النص بلون صنفها كما في بطاقات الأدلة، والدلالة والقاعدة محايدتان */
+.uqda--nass-aya {
   background: var(--aya-khafif);
   border-color: color-mix(in srgb, var(--aya) 35%, transparent);
 }
-.uqda--dalala .uqda__naw {
+.uqda--nass-aya .uqda__naw {
   color: var(--aya);
 }
 
-.uqda--qaida {
-  background: var(--aqli-khafif);
-  border-color: color-mix(in srgb, var(--aqli) 35%, transparent);
+.uqda--nass-hadith {
+  background: var(--hadith-khafif);
+  border-color: color-mix(in srgb, var(--hadith) 35%, transparent);
 }
-.uqda--qaida .uqda__naw {
-  color: var(--aqli);
+.uqda--nass-hadith .uqda__naw {
+  color: var(--hadith);
+}
+
+.uqda--nass,
+.uqda--dalala {
+  background: var(--ard-3);
+}
+
+.uqda--qaida {
+  background: var(--ard);
+  border-style: dashed;
+  border-color: var(--hashiya-2);
 }
 
 .uqda--hukm {
@@ -1010,13 +1064,13 @@ button {
 }
 
 .khiyar--khata {
-  border-color: var(--zahiri);
-  background: color-mix(in srgb, var(--zahiri) 12%, transparent);
+  border-color: var(--khata);
+  background: color-mix(in srgb, var(--khata) 12%, transparent);
 }
 
 .khiyar--khata .khiyar__harf {
-  background: var(--zahiri);
-  border-color: var(--zahiri);
+  background: var(--khata);
+  border-color: var(--khata);
   color: #fff;
 }
 
@@ -1137,6 +1191,84 @@ body[data-tadrib="1"] .tanbih-tadrib {
 
 .hadith-satr {
   color: var(--hadith);
+}
+
+/* ————— المصطلحات ————— */
+
+.mustalahat {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  margin: 0;
+}
+
+.mustalah {
+  border: 1px solid var(--hashiya);
+  border-inline-start: 3px solid var(--dhahab-2);
+  border-radius: var(--radius-sm);
+  background: var(--ard-2);
+  padding: 0.75rem 0.95rem;
+}
+
+.mustalah__kalima {
+  font-family: var(--khat-nass);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--midad);
+}
+
+.mustalah__sharh {
+  margin: 0.2rem 0 0;
+  font-size: 0.93rem;
+  line-height: 1.85;
+  color: var(--midad-2);
+}
+
+/* ————— شريط أقسام المسألة ————— */
+
+.aqsam {
+  position: sticky;
+  top: var(--shirit);
+  z-index: 20;
+  margin: -0.75rem 0 1.75rem;
+  padding: 0.5rem 0;
+  background: color-mix(in srgb, var(--ard) 92%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--hashiya);
+}
+
+.aqsam__lafif {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.aqsam__lafif::-webkit-scrollbar {
+  display: none;
+}
+
+.aqsam__zir {
+  flex: none;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--midad-3);
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+.aqsam__zir:hover {
+  color: var(--midad);
+  background: var(--ard-3);
+}
+
+.aqsam__zir--nashit {
+  color: var(--dhahab);
+  border-color: var(--dhahab-2);
+  background: var(--dhahab-khafif);
+  font-weight: 600;
 }
 
 /* ————— نتائج البحث ————— */
@@ -1465,14 +1597,14 @@ mark {
   }
 
   .uqda:not(:first-child)::before {
-    inset-inline-end: 50%;
+    inset-inline-start: calc(50% - 1px);
     top: -1.4rem;
     width: 2px;
     height: 1.4rem;
   }
 
   .uqda:not(:first-child)::after {
-    inset-inline-end: calc(50% - 5px);
+    inset-inline-start: calc(50% - 5px);
     top: -0.4rem;
     transform: none;
     border-inline: 5px solid transparent;
@@ -1491,9 +1623,67 @@ mark {
     padding: 0.5rem 0.6rem;
   }
 
+  /* البحث مطويٌّ في زرّ، فإذا فُتح غطّى الشريطَ كلَّه */
   .bahth {
-    flex: 1 1 5rem;
-    min-width: 4.5rem;
+    display: none;
+  }
+
+  .shirit .zir-bahth,
+  .shirit .zir-ziyada {
+    display: inline-flex;
+  }
+
+  .shirit--bahth .bahth {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    padding: 0 0.6rem;
+    background: var(--ard-2);
+  }
+
+  .shirit--bahth .bahth input {
+    flex: 1;
+    font-size: 1rem; /* دون ١٦px يكبّر iOS الصفحةَ عند التركيز */
+  }
+
+  .shirit--bahth .bahth__ayqona {
+    inset-inline-start: 1.45rem;
+  }
+
+  .shirit.shirit--bahth .bahth__ighlaq {
+    display: inline-flex;
+  }
+
+  /* الأزرار الثانوية تحت «⋯» */
+  .shirit__ziyada {
+    display: none;
+  }
+
+  .shirit--ziyada .shirit__ziyada {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    inset-inline-end: 0.5rem;
+    z-index: 3;
+    padding: 0.5rem;
+    border: 1px solid var(--hashiya);
+    border-radius: var(--radius);
+    background: var(--ard-2);
+    box-shadow: var(--zill-2);
+  }
+
+  .shirit--ziyada .shirit__ziyada .zir {
+    justify-content: flex-start;
+    padding: 0.5rem 0.8rem;
+  }
+
+  .shirit.shirit--ziyada .zir__lafz-ziyada {
+    display: inline;
   }
 }
 
@@ -1520,6 +1710,14 @@ mark {
   .matn {
     padding-inline: 0.85rem;
   }
+
+  /* الضبط على الجانبين في السطر القصير يفتح فجواتٍ واسعة بين الكلمات */
+  .dalil__matn,
+  .nass-manqul,
+  .faqra,
+  .sabab__nass {
+    text-align: start;
+  }
 }
 
 /* ————— أحجام الخط ————— */
@@ -1543,6 +1741,7 @@ mark {
   .tanaqqul,
   .zir-fahras,
   .hijab,
+  .aqsam,
   .tadrib {
     display: none !important;
   }

@@ -36,6 +36,7 @@
           qita.push(d.wajh_al_istidlal.nass, d.wajh_al_istidlal.sharh);
       });
     });
+    (m.mustalahat || []).forEach((x) => qita.push(x.kalima, x.sharh));
     return BM.tanzif(qita.filter(Boolean).join(" \n "));
   }
 

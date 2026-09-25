@@ -115,6 +115,8 @@ window.BM = window.BM || {};
         ? "dark"
         : "light";
     document.documentElement.setAttribute("data-theme", sima || nizam);
+    const z = document.getElementById("zir-sima");
+    if (z) z.setAttribute("aria-pressed", String((sima || nizam) === "dark"));
   };
 
   BM.qallibSima = () => {
@@ -174,6 +176,9 @@ window.BM = window.BM || {};
 
   window.addEventListener("hashchange", () => {
     BM.wajjih();
+    // لا يُنتزع التركيز من حقل البحث والقارئ يكتب فيه، وإلا انقطعت كتابتُه
+    // بعد أول نتيجة (وانطوت لوحة المفاتيح على الجوال)
+    if (document.activeElement && document.activeElement.id === "haql-bahth") return;
     const matn = document.getElementById("matn");
     if (matn) {
       matn.focus({ preventScroll: true });

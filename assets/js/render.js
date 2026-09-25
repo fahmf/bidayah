@@ -144,10 +144,10 @@
       (bunud
         ? `<div class="dalil dalil--ijma"><div class="dalil__ras">` +
           `<span class="wasm wasm--sinf">ما وقع عليه الاتفاق</span></div>` +
-          `<ul style="margin:0;padding:1rem 2.2rem">${bunud}</ul></div>`
+          `<ul class="tahrir__bunud">${bunud}</ul></div>`
         : "") +
       (nizaa
-        ? `<div class="dalil dalil--aqli"><div class="dalil__ras">` +
+        ? `<div class="dalil dalil--khilaf"><div class="dalil__ras">` +
           `<span class="wasm wasm--sinf">موضع الخلاف</span>` +
           (nizaa.mawdi
             ? `<span class="dalil__takhrij">${BM.himaya(nizaa.mawdi)}</span>`
@@ -288,14 +288,13 @@
         const qailun = (q.qailun || [])
           .map(
             (r) =>
-              `<span class="qail" data-madhhab="${BM.himaya(r.madhhab || "")}">` +
-              `${BM.himaya(r.ism)}${
-                r.madhhab ? ` <small>(${BM.himaya(r.madhhab)})</small>` : ""
+              `<span class="qail">${BM.himaya(r.ism)}${
+                r.madhhab ? `<small class="qail__madhhab">${BM.himaya(r.madhhab)}</small>` : ""
               }</span>`,
           )
           .join("");
         return (
-          `<article class="qawl" style="--lawn-qawl:${BM.lawnQawl(q)}">` +
+          `<article class="qawl">` +
           `<div class="qawl__raqm">القول ${BM.raqm(i + 1)}</div>` +
           `<p class="qawl__nass">${nassIbnRushd(q.nass)}</p>` +
           `<div class="qailun">${qailun}</div>` +
@@ -305,7 +304,7 @@
       .join("");
 
     const talkhis = m.talkhis_al_aqwal
-      ? `<div class="dalil dalil--ijma" style="margin-bottom:1rem">` +
+      ? `<div class="dalil dalil--mahayid" style="margin-bottom:1rem">` +
         `<div class="dalil__ras"><span class="wasm wasm--sinf">تلخيص ابن رشد للأقوال</span>` +
         (m.talkhis_al_aqwal.mawdi
           ? `<span class="dalil__takhrij">${BM.himaya(m.talkhis_al_aqwal.mawdi)}</span>`
@@ -403,7 +402,7 @@
     return (
       `<section class="qism" id="qism-tarjih" data-yukhfa>` +
       `<h2 class="qism__unwan">الترجيح</h2>` +
-      `<div class="dalil dalil--ijma">` +
+      `<div class="dalil dalil--mahayid">` +
       `<div class="dalil__ras"><span class="wasm wasm--sinf">${BM.himaya(
         m.tarjih.qail || "ابن رشد",
       )}</span>` +
@@ -413,6 +412,28 @@
       `</div>` +
       `<p class="dalil__matn">${nassIbnRushd(m.tarjih.nass)}</p>` +
       `</div></section>`
+    );
+  }
+
+  function qismMustalahat(m) {
+    const mustalahat = m.mustalahat || [];
+    if (!mustalahat.length) return "";
+    const bunud = mustalahat
+      .map(
+        (x) =>
+          `<div class="mustalah"><dt class="mustalah__kalima">${BM.himaya(x.kalima)}</dt>` +
+          `<dd class="mustalah__sharh">${nassIbnRushd(x.sharh)}</dd></div>`,
+      )
+      .join("");
+    return (
+      `<section class="qism" id="qism-mustalahat" data-yukhfa>` +
+      `<h2 class="qism__unwan">مصطلحات المسألة <span class="adad">${BM.raqm(
+        mustalahat.length,
+      )}</span></h2>` +
+      `<p class="irshad__nass" style="margin-top:-.5rem;margin-bottom:1rem">` +
+      `شرحٌ من المحرِّر لألفاظٍ يدور عليها كلامُ ابن رشد في المسألة.</p>` +
+      `<dl class="mustalahat">${bunud}</dl>` +
+      `</section>`
     );
   }
 
@@ -466,6 +487,74 @@
     );
   }
 
+  /* ————— فهرس أقسام المسألة ————— */
+
+  const ASMA_AQSAM = {
+    "qism-tahrir": "تحرير المحل",
+    "qism-adilla": "الأدلة",
+    "qism-aqwal": "الأقوال",
+    "qism-jadwal": "المقارنة",
+    "qism-sabab": "سبب الاختلاف",
+    "qism-shajara": "الشجرة",
+    "qism-tarjih": "الترجيح",
+    "qism-mustalahat": "المصطلحات",
+    "qism-nass": "النص",
+    "qism-tadrib": "تدريب",
+  };
+
+  /**
+   * شريطٌ لاصقٌ بأقسام المسألة، فالصفحة طويلة. يُبنى من الأقسام الموجودة فعلًا،
+   * ويرث كلُّ زرٍّ علامةَ الإخفاء من قسمه، فلا يدلّ وضعُ التدريب على ما أُخفي.
+   * والأزرار لا تغيّر عنوان الصفحة (#…) لأن التوجيه كلَّه قائمٌ عليه.
+   */
+  function ibniFihrisAqsam(jidhr) {
+    const aqsam = BM.$$("section.qism[id]", jidhr).filter((q) => ASMA_AQSAM[q.id]);
+    if (aqsam.length < 3) return;
+    const nav = BM.unsur(
+      `<nav class="aqsam" aria-label="أقسام المسألة"><div class="aqsam__lafif">` +
+        aqsam
+          .map(
+            (q) =>
+              `<button class="aqsam__zir" data-qism="${q.id}"${
+                q.hasAttribute("data-yukhfa") ? " data-yukhfa" : ""
+              }>${ASMA_AQSAM[q.id]}</button>`,
+          )
+          .join("") +
+        `</div></nav>`,
+    );
+    BM.$(".masala__ras", jidhr).after(nav);
+
+    if (!("IntersectionObserver" in window)) return;
+    // يُمرَّر الشريط أفقيًّا ليبقى الزرُّ النشط ظاهرًا. ولا يُستعمل scrollIntoView
+    // لأنه يقطع التمريرَ الرأسيّ الجاري إلى القسم
+    const lafif = BM.$(".aqsam__lafif", nav);
+    const marrir = (z) => {
+      const zr = z.getBoundingClientRect();
+      const lr = lafif.getBoundingClientRect();
+      if (zr.left < lr.left || zr.right > lr.right)
+        lafif.scrollBy({ left: zr.left - lr.left - (lr.width - zr.width) / 2 });
+    };
+    const azrar = new Map(BM.$$(".aqsam__zir", nav).map((z) => [z.dataset.qism, z]));
+    const zahir = new Set();
+    const raqib = new IntersectionObserver(
+      (qaid) => {
+        qaid.forEach((q) =>
+          q.isIntersecting ? zahir.add(q.target.id) : zahir.delete(q.target.id),
+        );
+        // النشط: أولُ قسمٍ ظاهرٍ بترتيب الصفحة
+        const awwal = aqsam.find((q) => zahir.has(q.id));
+        azrar.forEach((z, id) => {
+          const nashit = awwal && awwal.id === id;
+          z.classList.toggle("aqsam__zir--nashit", nashit);
+          if (nashit) marrir(z);
+        });
+      },
+      { rootMargin: "-30% 0px -60% 0px" },
+    );
+    aqsam.forEach((q) => raqib.observe(q));
+    BM.raqibAqsam = raqib;
+  }
+
   /* ————— الصفحات ————— */
 
   function safhaMasala(id) {
@@ -497,12 +586,14 @@
       qismSabab(m) +
       qismShajara(m) +
       qismTarjih(m) +
+      qismMustalahat(m) +
       qismNassKamil(m) +
       qismTadrib(m) +
       tanaqqul(m) +
       `</article>`;
 
     elMatn.innerHTML = html;
+    ibniFihrisAqsam(elMatn);
     BM.arbitTadrib(m, elMatn);
     document.title = `${m.unwan} — بداية المجتهد`;
   }
@@ -636,6 +727,10 @@
 
   BM.arsim = function () {
     const { ajza, bahth } = BM.masarHali();
+    if (BM.raqibAqsam) {
+      BM.raqibAqsam.disconnect();
+      BM.raqibAqsam = null;
+    }
 
     if (!ajza.length) safhaUla();
     else if (ajza[0] === "m" && ajza[1]) safhaMasala(ajza[1]);
@@ -655,6 +750,14 @@
     if (hadaf) {
       BM.idhhab(hadaf.dataset.idhhab);
       ighliqFahras();
+      document.getElementById("shirit").classList.remove("shirit--bahth");
+      return;
+    }
+
+    const qism = e.target.closest("[data-qism]");
+    if (qism) {
+      const hadaf = document.getElementById(qism.dataset.qism);
+      if (hadaf) hadaf.scrollIntoView({ block: "start" });
       return;
     }
 
@@ -696,6 +799,35 @@
   );
   hijab.addEventListener("click", ighliqFahras);
 
+  /* ————— البحث المطويّ وقائمة «⋯» على الجوال ————— */
+
+  const shirit = document.getElementById("shirit");
+  const zirZiyada = document.getElementById("zir-ziyada");
+  const haqlBahth = document.getElementById("haql-bahth");
+
+  document.getElementById("zir-bahth").addEventListener("click", () => {
+    shirit.classList.add("shirit--bahth");
+    haqlBahth.focus();
+  });
+  const ighliqBahth = () => shirit.classList.remove("shirit--bahth");
+  document.getElementById("zir-bahth-ighlaq").addEventListener("click", ighliqBahth);
+  haqlBahth.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") ighliqBahth();
+  });
+
+  const ighliqZiyada = () => {
+    shirit.classList.remove("shirit--ziyada");
+    zirZiyada.setAttribute("aria-expanded", "false");
+  };
+  zirZiyada.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const maftuh = shirit.classList.toggle("shirit--ziyada");
+    zirZiyada.setAttribute("aria-expanded", String(maftuh));
+  });
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("#shirit-ziyada, #zir-ziyada")) ighliqZiyada();
+  });
+
   document.getElementById("zir-sima").addEventListener("click", BM.qallibSima);
   document.getElementById("zir-hajm").addEventListener("click", BM.qallibHajm);
   document.getElementById("zir-tadrib").addEventListener("click", BM.qallibTadrib);
@@ -712,8 +844,16 @@
     clearTimeout(muhlat);
     muhlat = setTimeout(() => {
       const q = haql.value.trim();
-      if (q.length >= 2) BM.idhhab("#/bahth?q=" + encodeURIComponent(q));
-      else if (location.hash.startsWith("#/bahth")) BM.idhhab("#/");
+      const fiBahth = location.hash.startsWith("#/bahth");
+      if (q.length >= 2) {
+        const hadaf = "#/bahth?q=" + encodeURIComponent(q);
+        // ما دام القارئ في صفحة النتائج فالكتابة تعديلٌ للطلب نفسه لا صفحةٌ جديدة:
+        // يُستبدل العنوان فلا يمتلئ سجلُّ الرجوع بكل حرفٍ كُتب
+        if (fiBahth) {
+          history.replaceState(null, "", hadaf);
+          BM.wajjih();
+        } else BM.idhhab(hadaf);
+      } else if (fiBahth) BM.idhhab("#/");
     }, 220);
   });
 

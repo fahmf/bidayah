@@ -24,30 +24,43 @@
   </head>
 
   <body>
-    <header class="shirit">
+    <!-- الأيقونات رسومٌ مضمَّنة لا رموزٌ تعبيرية (emoji)، لأن هذه تختلف
+         صورتُها من جهازٍ إلى جهاز -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <symbol id="ay-fahras" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></symbol>
+        <symbol id="ay-bahth" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.2-4.2" /></symbol>
+        <symbol id="ay-marashih" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></symbol>
+        <symbol id="ay-tadrib" viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z" /><path d="m13.5 6.5 4 4" /></symbol>
+        <symbol id="ay-hajm" viewBox="0 0 24 24"><path d="M3 19 8.5 5 14 19M5.2 14h6.6" /><path d="M15.5 19l3-7.5 3 7.5M16.6 16.5h3.8" /></symbol>
+        <symbol id="ay-qamar" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" /></symbol>
+        <symbol id="ay-shams" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></symbol>
+        <symbol id="ay-ziyada" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3" /><circle cx="12" cy="12" r="1.3" /><circle cx="19" cy="12" r="1.3" /></symbol>
+        <symbol id="ay-ighlaq" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" /></symbol>
+      </defs>
+    </svg>
+
+    <header class="shirit" id="shirit">
       <button
         class="zir zir--ayqona zir-fahras"
         id="zir-fahras"
         aria-label="الفهرس"
         aria-expanded="false"
       >
-        ☰
+        <svg class="ayqona"><use href="#ay-fahras" /></svg>
       </button>
 
-      <a
-        class="shirit__ism"
-        href="#/"
-        style="text-decoration: none"
-        title="الصفحة الأولى"
-      >
+      <a class="shirit__ism" href="#/" title="الصفحة الأولى">
         بداية المجتهد
         <span>الأدلة وطرق الاستنباط</span>
       </a>
 
       <div class="shirit__fasl"></div>
 
-      <div class="bahth">
-        <span class="bahth__ayqona" aria-hidden="true">🔍</span>
+      <!-- على الجوال يُطوى البحث في زرّ، فإذا فُتح غطّى الشريط كلَّه،
+           لأن حقلًا بعرض حرفٍ واحد لا يُكتب فيه -->
+      <div class="bahth" id="bahth">
+        <svg class="ayqona bahth__ayqona" aria-hidden="true"><use href="#ay-bahth" /></svg>
         <input
           type="search"
           id="haql-bahth"
@@ -55,23 +68,47 @@
           aria-label="بحث"
           autocomplete="off"
         />
+        <button class="zir zir--ayqona bahth__ighlaq" id="zir-bahth-ighlaq" aria-label="إغلاق البحث">
+          <svg class="ayqona"><use href="#ay-ighlaq" /></svg>
+        </button>
       </div>
 
-      <button class="zir" id="zir-marashih" aria-expanded="false">
-        <span aria-hidden="true">⚙</span><span class="zir__lafz">المرشِّحات</span>
+      <button class="zir zir--ayqona zir-bahth" id="zir-bahth" aria-label="بحث">
+        <svg class="ayqona"><use href="#ay-bahth" /></svg>
       </button>
 
-      <button class="zir" id="zir-tadrib" aria-pressed="false">
-        <span aria-hidden="true">✎</span><span class="zir__lafz">وضع التدريب</span>
+      <button class="zir" id="zir-marashih" aria-expanded="false" aria-label="المرشِّحات">
+        <svg class="ayqona" aria-hidden="true"><use href="#ay-marashih" /></svg
+        ><span class="zir__lafz">المرشِّحات</span>
       </button>
 
-      <button class="zir zir--ayqona" id="zir-hajm" aria-label="حجم الخط">
-        <span aria-hidden="true">ت</span><small>ت</small>
+      <button class="zir" id="zir-tadrib" aria-pressed="false" aria-label="وضع التدريب">
+        <svg class="ayqona" aria-hidden="true"><use href="#ay-tadrib" /></svg
+        ><span class="zir__lafz">وضع التدريب</span>
       </button>
 
-      <button class="zir zir--ayqona" id="zir-sima" aria-label="الوضع الليلي">
-        ☾
+      <!-- الأزرار الثانوية: ظاهرةٌ على الشاشة الواسعة، وتحت «⋯» على الجوال -->
+      <button
+        class="zir zir--ayqona zir-ziyada"
+        id="zir-ziyada"
+        aria-label="خيارات أخرى"
+        aria-expanded="false"
+      >
+        <svg class="ayqona"><use href="#ay-ziyada" /></svg>
       </button>
+
+      <div class="shirit__ziyada" id="shirit-ziyada">
+        <button class="zir zir--ayqona" id="zir-hajm" aria-label="حجم الخط" title="حجم الخط">
+          <svg class="ayqona" aria-hidden="true"><use href="#ay-hajm" /></svg
+          ><span class="zir__lafz-ziyada">حجم الخط</span>
+        </button>
+
+        <button class="zir zir--ayqona" id="zir-sima" aria-label="تبديل الوضع الليلي" title="الوضع الليلي">
+          <svg class="ayqona ayqona--qamar" aria-hidden="true"><use href="#ay-qamar" /></svg
+          ><svg class="ayqona ayqona--shams" aria-hidden="true"><use href="#ay-shams" /></svg
+          ><span class="zir__lafz-ziyada">الوضع الليلي</span>
+        </button>
+      </div>
     </header>
 
     <div class="marashih" id="marashih" role="region" aria-label="المرشحات"></div>

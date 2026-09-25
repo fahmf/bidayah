@@ -10,26 +10,25 @@
 (function (BM) {
   "use strict";
 
-  const ALWAN_MADHAHIB = {
-    المالكية: "var(--maliki)",
-    الحنفية: "var(--hanafi)",
-    الشافعية: "var(--shafii)",
-    الحنابلة: "var(--hanbali)",
-    الظاهرية: "var(--zahiri)",
-  };
-
+  /**
+   * ألوان العقد: عقدة النص تأخذ لونَ صنفها في سائر الموقع (الآيةُ بلون الآية،
+   * والحديثُ بلون الحديث)، وما بعدها من دلالةٍ وقاعدةٍ محايدٌ، والحكمُ بالذهب.
+   * ولا تُلوَّن المساراتُ بالمذاهب: فتلك الألوان محجوزةٌ لأصناف الأدلة، ولو
+   * تقاسمها المعنيان لالتبس على الناظر أخضرُ «المالكية» بأخضر «القرآن».
+   */
   const SINF_UQDA = {
-    نص: "nass",
     دلالة: "dalala",
     قاعدة: "qaida",
     حكم: "hukm",
   };
 
-  /** لون المسار: لون مذهب أول قائل، وإلا لون محايد */
-  function lawnQawl(qawl) {
-    const madhhab = ((qawl && qawl.qailun) || []).map((q) => q.madhhab).find(Boolean);
-    return ALWAN_MADHAHIB[madhhab] || "var(--hashiya-2)";
-  }
+  const sinfUqda = (u) => {
+    if (u.naw !== "نص") return SINF_UQDA[u.naw] || "dalala";
+    const matn = String(u.matn || "");
+    if (/[﴿{]/.test(matn)) return "nass-aya";
+    if (/«/.test(matn)) return "nass-hadith";
+    return "nass";
+  };
 
   /** اسم مختصر للمسار: أسماء القائلين */
   function ismMasar(qawl) {
@@ -47,14 +46,15 @@
     const masarat = masala.shajarat_al_istinbat || [];
     if (!masarat.length) return "";
 
-    const aqwal = new Map((masala.aqwal || []).map((q) => [q.id, q]));
+    const aqwal = masala.aqwal || [];
+    const bilId = new Map(aqwal.map((q, i) => [q.id, { q, i }]));
 
     const jism = masarat
       .map((masar) => {
-        const qawl = aqwal.get(masar.qawl_id);
+        const { q: qawl, i } = bilId.get(masar.qawl_id) || {};
         const uqad = (masar.uqad || [])
           .map((u) => {
-            const sinf = SINF_UQDA[u.naw] || "nass";
+            const sinf = sinfUqda(u);
             return (
               `<li class="uqda uqda--${sinf}">` +
               `<div class="uqda__naw">${BM.himaya(u.naw)}</div>` +
@@ -65,8 +65,11 @@
           .join("");
 
         return (
-          `<div class="masar" style="--lawn-qawl:${lawnQawl(qawl)}">` +
-          `<div class="masar__ism">${BM.himaya(ismMasar(qawl))}</div>` +
+          `<div class="masar">` +
+          // المسار موصولٌ ببطاقة قوله برقمه لا بلونه
+          `<div class="masar__ism">` +
+          (i != null ? `<span class="masar__raqm">القول ${BM.raqm(i + 1)}</span>` : "") +
+          `<span>${BM.himaya(ismMasar(qawl))}</span></div>` +
           `<ol class="uqad">${uqad}</ol>` +
           `</div>`
         );
@@ -76,5 +79,4 @@
     return `<div class="shajara-lafif"><div class="shajara">${jism}</div></div>`;
   };
 
-  BM.lawnQawl = lawnQawl;
 })(window.BM);

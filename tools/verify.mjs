@@ -31,8 +31,9 @@ const tahmil = (masar) => {
 
 tahmil("data/nusus.js");
 tahmil("data/tahlil.js");
+tahmil("data/dalala.js");
 
-const { nusus, fahras, tahlil } = win.BIDAYAH;
+const { nusus, fahras, tahlil, ajnas_dalala: ajnasDalala } = win.BIDAYAH;
 
 /* ————— التطبيع قبل المقارنة —————
    نُسقِط علامات الاقتباس والأقواس فقط، ونوحّد الفراغات.
@@ -42,6 +43,18 @@ const sawwi = (s) =>
   String(s)
     .replace(/ms\d{4}/g, " ")
     .replace(/[{}«»﴿﴾]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/** حروفٌ فقط: بلا حركات ولا ترقيم، والهمزات والتاء المربوطة موحَّدة */
+const jarrid = (s) =>
+  String(s)
+    .replace(/ms\d{4}/g, " ")
+    .replace(/[\u064B-\u0652\u0640]/g, "")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/[^\u0621-\u064A]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -55,13 +68,19 @@ const nassKhalis = (raw) =>
 
 /* مصدرُ كل قسمٍ على حدة، مسوّىً مرةً واحدة */
 const MASADIR = new Map();
+/* والمصدرُ نفسُه مجرَّدًا من الحركات والترقيم، لمقابلة ما يقتبسه المحرِّر
+   في صياغته (شجرة الاستنباط): فهو يقتطع من الآية أو الحديث ما يحتاجه،
+   فلا يُطلب فيه ضبطُ الحركات، وإنما أن يكون اللفظُ لفظَ الكتاب. */
+const MASADIR_MUJARRADA = new Map();
 for (const qism of AQSAM) {
   const masar = resolve(ROOT, qism.masdar);
   if (!existsSync(masar)) {
     console.error(`\n  ✘ ${qism.muarrif}: لا يوجد ${qism.masdar}\n`);
     process.exit(1);
   }
-  MASADIR.set(qism.muarrif, sawwi(nassKhalis(readFileSync(masar, "utf8"))));
+  const khalis = nassKhalis(readFileSync(masar, "utf8"));
+  MASADIR.set(qism.muarrif, sawwi(khalis));
+  MASADIR_MUJARRADA.set(qism.muarrif, jarrid(khalis));
 }
 
 /** مصدر القسم الذي ينتمي إليه معرّفُ الوحدة، أو null إن كانت البادئة مجهولة */
@@ -238,10 +257,32 @@ for (const [id, t] of Object.entries(tahlil)) {
   });
 
   (t.shajarat_al_istinbat || []).forEach((m, i) => {
-    if (!muarrifat.has(m.qawl_id))
-      khata(`${id}.shajarat_al_istinbat[${i}]`, `qawl_id مجهول: ${m.qawl_id}`);
-    if (!m.uqad || m.uqad.length < 2)
-      khata(`${id}.shajarat_al_istinbat[${i}]`, "مسارٌ أقل من عقدتين");
+    const masar = `${id}.shajarat_al_istinbat[${i}]`;
+    if (!muarrifat.has(m.qawl_id)) khata(masar, `qawl_id مجهول: ${m.qawl_id}`);
+    if (!m.uqad || m.uqad.length < 2) khata(masar, "مسارٌ أقل من عقدتين");
+
+    /* الشجرة صياغةُ المحرِّر فلا تُقابَل بحروفها، لكن ما وضعه فيها بين
+       ﴿…﴾ أو «…» يُقرأ على أنه لفظُ آيةٍ أو حديث، فيجب أن يكون لفظَ
+       الكتاب لا روايتَه بالمعنى. وتُقطَّع الكلمةُ عند «…» لأن المحرِّر
+       يختصر الآية أحيانًا. */
+    const masdarMujarrad = MASADIR_MUJARRADA.get(qismWahda(id).muarrif);
+    (m.uqad || []).forEach((u, j) => {
+      for (const [, iqtibas] of String(u.matn || "").matchAll(/[﴿{«]([^﴾}»]+)[﴾}»]/g))
+        for (const qita of iqtibas.split(/…|\.\.\./)) {
+          const q = jarrid(qita);
+          if (q.length > 3 && !masdarMujarrad.includes(q))
+            khata(
+              `${masar}.uqad[${j}]`,
+              `ما بين علامتي الاقتباس ليس لفظَ الكتاب:\n      «${qita.trim().slice(0, 100)}»`,
+            );
+        }
+    });
+
+    /* عقدةُ النص أولُ ما يراه الطالب من مسلك القول، فلا تكون إحالةً مبهمة
+       («الحديث نفسه»، «الآية نفسها») يُطلب معناها في موضعٍ آخر من الصفحة */
+    const nass = (m.uqad || []).find((u) => u.naw === "نص");
+    if (nass && /نفس(?:ه|ها|هما)(?![\u0621-\u064A])/.test(nass.matn))
+      khata(masar, `عقدةُ النص إحالةٌ مبهمة — سمِّ النصَّ نفسَه:\n      «${nass.matn}»`);
   });
 
   // المباحث التي حكى فيها ابن رشد اتفاقًا لا خلافًا لا سببَ لها،
@@ -266,6 +307,37 @@ for (const [id, t] of Object.entries(tahlil)) {
       khata(`${id}.tadrib[${i}]`, "رقم الجواب الصحيح خارج الخيارات");
   });
 }
+
+/* ————— أجناس الدلالة —————
+   كلُّ وسمٍ لوجه الدلالة مردودٌ إلى جنسٍ واحدٍ في data/dalala.js، ولا يُترك
+   هناك وسمٌ لا يُستعمل — وإلا انقطع الدليلُ عن نظائره في صفحة الجنس. */
+
+const jinsWasm = new Map();
+for (const j of ajnasDalala || []) {
+  if (!j.jins) khata("dalala.js", "جنسٌ بلا اسم");
+  for (const w of j.anwa || []) {
+    if (jinsWasm.has(w))
+      khata("dalala.js", `الوسم «${w}» في جنسين: ${jinsWasm.get(w)} و${j.jins}`);
+    jinsWasm.set(w, j.jins);
+  }
+}
+
+const wusumMustamala = new Set();
+for (const [id, t] of Object.entries(tahlil))
+  (t.aqwal || []).forEach((q, i) =>
+    (q.adilla || []).forEach((d, j) => {
+      const masar = `${id}.aqwal[${i}].adilla[${j}]`;
+      if (!d.naw_al_dalala) return khata(masar, "دليلٌ بلا وجه دلالة (naw_al_dalala)");
+      wusumMustamala.add(d.naw_al_dalala);
+      if (!jinsWasm.has(d.naw_al_dalala))
+        khata(
+          masar,
+          `الوسم «${d.naw_al_dalala}» ليس في جنسٍ من data/dalala.js — أضفه إلى جنسه`,
+        );
+    }),
+  );
+for (const w of jinsWasm.keys())
+  if (!wusumMustamala.has(w)) khata("dalala.js", `وسمٌ لا يُستعمل: «${w}»`);
 
 /* ————— ٣: سلامة النصوص المولَّدة ————— */
 
@@ -310,6 +382,11 @@ console.log("  المسائل والمباحث   : " + raqm(nusus.length));
 console.log("  منها محلَّلة        : " + raqm(Object.keys(tahlil).length));
 console.log("  الفقرات المولَّدة   : " + raqm(fiqarKull) + " (كلها مطابقة للمصدر)");
 console.log("  الاقتباسات المفحوصة: " + raqm(adadIqtibas));
+console.log(
+  "  أجناس الدلالة      : " +
+    raqm((ajnasDalala || []).length) +
+    ` (تجمع ${raqm(wusumMustamala.size)} وسمًا)`,
+);
 console.log("");
 
 if (akhta.length) {

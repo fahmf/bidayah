@@ -113,6 +113,7 @@
     elMarashih.innerHTML =
       majmua("صنف الدليل:", "sinf", q.asnaf) +
       majmua("المذهب:", "madhhab", q.madhahib) +
+      majmua("جنس الدلالة:", "jins_dalala", q.ajnas) +
       majmua("سبب الاختلاف:", "naw_sabab", q.anwa) +
       (lahu
         ? `<div class="marashih__majmua"><button class="zir" data-murashshih="مسح">✕ مسح المرشِّحات</button></div>`
@@ -181,6 +182,18 @@
     return mushtarak / Math.min(x.size, y.size) >= 0.72;
   };
 
+  /** وسمُ وجه الدلالة: زرٌّ إلى نظائره من جنسه في سائر الكتاب */
+  function wasmDalala(wasm) {
+    const jins = BM.jinsDalala(wasm);
+    if (!jins) return `<span class="wasm wasm--dalala">${BM.himaya(wasm)}</span>`;
+    return (
+      `<button class="wasm wasm--dalala wasm--zir" data-idhhab="#/dalala/${encodeURIComponent(
+        jins,
+      )}" title="جنس الدلالة: ${BM.himaya(jins)} — اضغط لترى نظائره">` +
+      `${BM.himaya(wasm)}</button>`
+    );
+  }
+
   function bitaqatDalil(d, qawl) {
     const taraz = tarazDalil(d);
     const qail = ((qawl && qawl.qailun) || []).map((r) => r.ism).join("، ");
@@ -218,9 +231,7 @@
       `<article class="dalil dalil--${taraz}">` +
       `<div class="dalil__ras">` +
       `<span class="wasm wasm--sinf">${BM.himaya(d.sinf || d.naw || "دليل")}</span>` +
-      (d.naw_al_dalala
-        ? `<span class="wasm wasm--dalala">${BM.himaya(d.naw_al_dalala)}</span>`
-        : "") +
+      (d.naw_al_dalala ? wasmDalala(d.naw_al_dalala) : "") +
       (qail
         ? `<span class="wasm wasm--dalala" data-yukhfa>استدلَّ به: ${BM.himaya(qail)}</span>`
         : "") +
@@ -600,13 +611,14 @@
 
   function safhaUla() {
     const adad = BM.masail.length;
-    const muhallala = BM.masail.filter((m) => m.lahu_tahlil).length;
     const asbab = new Set();
     BM.masail.forEach((m) => (m.sabab ? (m.sabab.anwa || []).forEach((n) => asbab.add(n)) : null));
     const adilla = BM.masail.reduce(
       (a, m) => a + (m.aqwal || []).reduce((s, q) => s + (q.adilla || []).length, 0),
       0,
     );
+
+    const adadAjnas = BM.ajnasDalala.filter((j) => BM.adillaBiJins(j.jins).length).length;
 
     const ihsaiya = (r, l) =>
       `<div class="ihsaiya"><div class="ihsaiya__raqm">${BM.raqm(r)}</div>` +
@@ -626,9 +638,9 @@
       `</p>` +
       `<div class="ihsaiyat">` +
       ihsaiya(adad, "مسألة ومبحث") +
-      ihsaiya(muhallala, "مسألة محلَّلة") +
       ihsaiya(adilla, "دليلًا مفصَّلًا") +
       ihsaiya(asbab.size, "نوعًا من أسباب الاختلاف") +
+      ihsaiya(adadAjnas, "جنسًا من أجناس الدلالة") +
       `</div>` +
       `<div class="irshad">` +
       irshad(
@@ -647,6 +659,7 @@
           "الدليل، فتستنبط الحكم بنفسك ثم تكشف الجواب.",
       ) +
       `</div>` +
+      qaimatAjnas() +
       `<div class="tanaqqul" style="margin-top:2.5rem">` +
       `<button class="tanaqqul__zir" data-idhhab="#/m/${BM.masail[0] ? BM.masail[0].id : ""}">` +
       `<span class="tanaqqul__lafz">ابدأ من أول الكتاب</span>` +
@@ -656,6 +669,74 @@
       `</div>`;
 
     document.title = "بداية المجتهد — الأدلة وطرق الاستنباط";
+  }
+
+  /** شبكة أجناس الدلالة، وتُعرض في الصفحة الأولى وفي فهرس الأجناس */
+  function qaimatAjnas() {
+    const bunud = BM.ajnasDalala
+      .map((j) => [j, BM.adillaBiJins(j.jins).length])
+      .filter(([, n]) => n)
+      .map(
+        ([j, n]) =>
+          `<button class="jins-band" data-idhhab="#/dalala/${encodeURIComponent(j.jins)}">` +
+          `<span class="jins-band__ism">${BM.himaya(j.jins)}</span>` +
+          `<span class="jins-band__adad">${BM.raqm(n)} دليلًا</span>` +
+          `</button>`,
+      )
+      .join("");
+    return (
+      `<section class="ajnas">` +
+      `<h2 class="qism__unwan">أجناس الدلالة</h2>` +
+      `<p class="irshad__nass" style="margin-top:-.5rem;margin-bottom:1rem;text-align:start">` +
+      `كلُّ دليلٍ موسومٌ بوجه دلالته، والوسومُ مردودةٌ إلى أجناسٍ على أبواب أصول الفقه. ` +
+      `اختر جنسًا لترى كلَّ ما استُدلّ به على هذا الوجه في سائر الكتاب.</p>` +
+      `<div class="ajnas__shabaka">${bunud}</div></section>`
+    );
+  }
+
+  function safhaJins(jins) {
+    const j = BM.ajnasDalala.find((x) => x.jins === jins);
+    if (!j) return safhaKhata();
+    const nataij = BM.adillaBiJins(jins);
+
+    // تُجمع الأدلة تحت وسمها الدقيق، ويُرتَّب الوسمُ الأكثرُ ورودًا أولًا
+    const bilWasm = new Map();
+    nataij.forEach((n) => {
+      const w = n.d.naw_al_dalala;
+      if (!bilWasm.has(w)) bilWasm.set(w, []);
+      bilWasm.get(w).push(n);
+    });
+    const majmuat = [...bilWasm.entries()].sort((a, b) => b[1].length - a[1].length);
+
+    const band = ({ m, q, d }) =>
+      `<button class="natija-band natija-band--dalil dalil--${tarazDalil(d)}" data-idhhab="#/m/${m.id}">` +
+      `<div class="natija-band__mawdi">${BM.himaya(d.sinf || "")} · ${BM.himaya(
+        m.unwan,
+      )}</div>` +
+      `<div class="nass-manqul natija-band__matn">${nassIbnRushd(d.matn)}</div>` +
+      `<div class="natija-band__mawdi" data-yukhfa>استدلَّ به: ${BM.himaya(
+        (q.qailun || []).map((r) => r.ism).join("، "),
+      )}</div>` +
+      `</button>`;
+
+    elMatn.innerHTML =
+      `<h1 class="masala__unwan" style="margin-bottom:.5rem">${BM.himaya(jins)}</h1>` +
+      `<p class="masala__mawdi" style="margin-bottom:1rem">جنسٌ من أجناس الدلالة · ${BM.raqm(
+        nataij.length,
+      )} دليلًا في ${BM.raqm(new Set(nataij.map((n) => n.m.id)).size)} مسألة</p>` +
+      `<div class="sharh" style="margin:0 0 1.75rem">${BM.himaya(j.sharh)}</div>` +
+      majmuat
+        .map(
+          ([w, ns]) =>
+            `<section class="qism">` +
+            `<h2 class="qism__unwan qism__unwan--saghir">${BM.himaya(w)} <span class="adad">${BM.raqm(
+              ns.length,
+            )}</span></h2>` +
+            `<div class="nataij">${ns.map(band).join("")}</div></section>`,
+        )
+        .join("") +
+      `<nav class="ajnas__ukhra">${qaimatAjnas()}</nav>`;
+    document.title = `${jins} — بداية المجتهد`;
   }
 
   function safhaBahth(talab) {
@@ -736,6 +817,7 @@
     else if (ajza[0] === "m" && ajza[1]) safhaMasala(ajza[1]);
     else if (ajza[0] === "bahth") safhaBahth(bahth.get("q") || "");
     else if (ajza[0] === "naw" && ajza[1]) safhaNaw(ajza.slice(1).join("/"));
+    else if (ajza[0] === "dalala" && ajza[1]) safhaJins(ajza.slice(1).join("/"));
     else safhaKhata();
 
     ibniFahras();
@@ -765,7 +847,7 @@
     if (mur) {
       const miftah = mur.dataset.murashshih;
       if (miftah === "مسح") {
-        BM.murashshih = { sinf: null, madhhab: null, naw_sabab: null };
+        Object.keys(BM.murashshih).forEach((k) => (BM.murashshih[k] = null));
       } else {
         const qima = mur.dataset.qima;
         BM.murashshih[miftah] = BM.murashshih[miftah] === qima ? null : qima;

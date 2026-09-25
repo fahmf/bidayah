@@ -25,6 +25,12 @@ window.BM = window.BM || {};
 
   BM.bilMuarrif = new Map(BM.masail.map((m) => [m.id, m]));
 
+  /** أجناس الدلالة: كلُّ وسمٍ دقيقٍ لوجه الدلالة مردودٌ إلى جنسه */
+  BM.ajnasDalala = D.ajnas_dalala || [];
+  const JINS_WASM = new Map();
+  BM.ajnasDalala.forEach((j) => j.anwa.forEach((w) => JINS_WASM.set(w, j.jins)));
+  BM.jinsDalala = (wasm) => JINS_WASM.get(wasm) || null;
+
   /* ————— أدوات عامة ————— */
 
   const ARQAM = "٠١٢٣٤٥٦٧٨٩";
@@ -157,6 +163,7 @@ window.BM = window.BM || {};
    *   #/m/th-002            مسألة بعينها
    *   #/bahth?q=…           نتائج البحث
    *   #/naw/تردد اللفظ      المسائل المشتركة في سبب اختلاف واحد
+   *   #/dalala/الحصر        الأدلة المشتركة في جنس دلالة واحد
    */
   BM.masarHali = () => {
     const h = decodeURIComponent(location.hash.replace(/^#/, "")) || "/";

@@ -1271,6 +1271,81 @@ body[data-tadrib="1"] .tanbih-tadrib {
   font-weight: 600;
 }
 
+/* ————— أجناس الدلالة ————— */
+
+.wasm--zir {
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.wasm--zir:hover {
+  color: var(--dhahab);
+  border-color: var(--dhahab-2);
+  background: var(--dhahab-khafif);
+}
+
+.ajnas {
+  margin-top: 2.5rem;
+  text-align: start;
+}
+
+.ajnas__shabaka {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+}
+
+.jins-band {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--hashiya);
+  border-radius: var(--radius-sm);
+  background: var(--ard-2);
+  text-align: start;
+}
+
+.jins-band:hover {
+  border-color: var(--dhahab-2);
+  background: var(--dhahab-khafif);
+}
+
+.jins-band__ism {
+  font-family: var(--khat-nass);
+  font-size: 1.15rem;
+  line-height: 1.5;
+  color: var(--midad);
+}
+
+.jins-band__adad {
+  font-size: 0.78rem;
+  color: var(--midad-3);
+}
+
+.ajnas__ukhra {
+  margin-top: 3rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--hashiya);
+}
+
+.qism__unwan--saghir {
+  font-size: 1.2rem;
+}
+
+/* بطاقة دليلٍ في صفحة الجنس: بحاشية لون صنفه كما في المسألة */
+.natija-band.natija-band--dalil {
+  border-inline-start: 4px solid var(--lawn, var(--hashiya-2));
+}
+
+.natija-band__matn {
+  font-size: 1.1rem;
+  margin: 0.3rem 0;
+}
+
 /* ————— نتائج البحث ————— */
 
 .nataij {

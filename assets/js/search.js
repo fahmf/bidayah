@@ -31,7 +31,7 @@
       qita.push(q.nass);
       (q.qailun || []).forEach((r) => qita.push(r.ism, r.madhhab));
       (q.adilla || []).forEach((d) => {
-        qita.push(d.matn, d.takhrij, d.naw_al_dalala, d.sinf);
+        qita.push(d.matn, d.takhrij, d.naw_al_dalala, BM.jinsDalala(d.naw_al_dalala), d.sinf);
         if (d.wajh_al_istidlal)
           qita.push(d.wajh_al_istidlal.nass, d.wajh_al_istidlal.sharh);
       });
@@ -94,26 +94,36 @@
 
   /* ————— المرشِّحات ————— */
 
-  BM.murashshih = { sinf: null, madhhab: null, naw_sabab: null };
+  BM.murashshih = { sinf: null, madhhab: null, naw_sabab: null, jins_dalala: null };
 
   /** جمع القيم المتاحة للمرشحات من كل المسائل */
   BM.qawaimMurashshih = () => {
     const asnaf = new Map();
     const madhahib = new Map();
     const anwa = new Map();
+    const ajnas = new Map();
     const zid = (m, k) => m.set(k, (m.get(k) || 0) + 1);
 
     BM.masail.forEach((m) => {
       (m.aqwal || []).forEach((q) => {
         (q.qailun || []).forEach((r) => r.madhhab && zid(madhahib, r.madhhab));
-        (q.adilla || []).forEach((d) => d.sinf && zid(asnaf, d.sinf));
+        (q.adilla || []).forEach((d) => {
+          if (d.sinf) zid(asnaf, d.sinf);
+          const jins = BM.jinsDalala(d.naw_al_dalala);
+          if (jins) zid(ajnas, jins);
+        });
       });
       if (m.sabab && m.sabab.anwa) m.sabab.anwa.forEach((n) => zid(anwa, n));
     });
 
     const rattib = (m) =>
       Array.from(m.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ar"));
-    return { asnaf: rattib(asnaf), madhahib: rattib(madhahib), anwa: rattib(anwa) };
+    return {
+      asnaf: rattib(asnaf),
+      madhahib: rattib(madhahib),
+      anwa: rattib(anwa),
+      ajnas: rattib(ajnas),
+    };
   };
 
   /** هل تجتاز المسألة المرشِّحات الحالية؟ */
@@ -131,6 +141,12 @@
       );
       if (!lahu) return false;
     }
+    if (f.jins_dalala) {
+      const lahu = (m.aqwal || []).some((q) =>
+        (q.adilla || []).some((d) => BM.jinsDalala(d.naw_al_dalala) === f.jins_dalala),
+      );
+      if (!lahu) return false;
+    }
     if (f.naw_sabab) {
       const anwa = (m.sabab && m.sabab.anwa) || [];
       if (!anwa.includes(f.naw_sabab)) return false;
@@ -138,8 +154,20 @@
     return true;
   };
 
-  BM.lahuMurashshih = () =>
-    Boolean(BM.murashshih.sinf || BM.murashshih.madhhab || BM.murashshih.naw_sabab);
+  BM.lahuMurashshih = () => Object.values(BM.murashshih).some(Boolean);
+
+  /** الأدلة التي من جنس دلالةٍ واحد، في سائر الكتاب، مع مسائلها وأقوالها */
+  BM.adillaBiJins = (jins) => {
+    const nataij = [];
+    BM.masail.forEach((m) =>
+      (m.aqwal || []).forEach((q) =>
+        (q.adilla || []).forEach((d) => {
+          if (BM.jinsDalala(d.naw_al_dalala) === jins) nataij.push({ m, q, d });
+        }),
+      ),
+    );
+    return nataij;
+  };
 
   /** المسائل المشتركة في نوع سبب اختلاف واحد */
   BM.masailBiNaw = (naw) =>

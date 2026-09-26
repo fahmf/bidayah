@@ -11,6 +11,13 @@
 
   const HURUF = "أبجدهـوز";
 
+  /** أنواع الأسئلة: ما يُمتحن فيه الطالب من المسألة */
+  const ANWA = {
+    تحرير: "تحرير المحل",
+    دليل: "الدليل",
+    دلالة: "وجه الدلالة",
+  };
+
   /**
    * ترتيب الخيارات:
    * كُتبت الأجوبة الصحيحة في البيانات على نسقٍ واحد غالبًا، فلو عُرضت على
@@ -63,6 +70,11 @@
 
         return (
           `<div class="tadrib" data-bitaqa="${i}">` +
+          (ANWA[s.naw]
+            ? `<span class="tadrib__naw tadrib__naw--${
+                { تحرير: "tahrir", دليل: "dalil", دلالة: "dalala" }[s.naw]
+              }">${ANWA[s.naw]}</span>`
+            : "") +
           `<p class="tadrib__sual">${BM.raqm(i + 1)}. ${BM.lawwinNusus(BM.himaya(s.suaal))}</p>` +
           `<div class="khiyarat">${khiyarat}</div>` +
           `<div class="tafsir" hidden>${BM.lawwinNusus(BM.himaya(s.tafsir || ""))}</div>` +

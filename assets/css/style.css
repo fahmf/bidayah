@@ -1000,6 +1000,24 @@ button {
   box-shadow: var(--zill);
 }
 
+.tadrib__naw {
+  display: inline-block;
+  margin-bottom: 0.4rem;
+  padding: 0.05rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--midad-3);
+}
+
+/* الألوان من لوحة الموقع: تحرير المحل بلون الخلاف (الذهب)، والدليل
+   والدلالة محايدان — فلا يُشبه الوسمُ صنفًا من أصناف الأدلة */
+.tadrib__naw--tahrir {
+  color: var(--dhahab);
+  background: var(--dhahab-khafif);
+}
+
 .tadrib__sual {
   font-family: var(--khat-nass);
   font-size: 1.3rem;

@@ -222,6 +222,25 @@ function tafahhasTahrir(id, t) {
 
 const bilMuarrif = new Map(nusus.map((n) => [n.id, n]));
 
+const ANWA_TADRIB = new Set(["تحرير", "دليل", "دلالة"]);
+
+/* ما يضعه المحرِّر في صياغته (الشجرة والتدريب) بين ﴿…﴾ أو «…» يُقرأ على أنه
+   لفظُ آيةٍ أو حديث أو لفظُ ابن رشد، فيجب أن يكون لفظَ الكتاب لا روايتَه
+   بالمعنى. ويُقابَل مجرَّدًا من الحركات، ويُقطَّع عند «…» لأن المحرِّر
+   يختصر الآية أحيانًا. */
+function tafahhasIqtibasat(id, masar, nass) {
+  const masdarMujarrad = MASADIR_MUJARRADA.get(qismWahda(id).muarrif);
+  for (const [, iqtibas] of String(nass || "").matchAll(/[﴿{«]([^﴾}»]+)[﴾}»]/g))
+    for (const qita of iqtibas.split(/…|\.\.\./)) {
+      const q = jarrid(qita);
+      if (q.length > 3 && !masdarMujarrad.includes(q))
+        khata(
+          masar,
+          `ما بين علامتي الاقتباس ليس لفظَ الكتاب:\n      «${qita.trim().slice(0, 100)}»`,
+        );
+    }
+}
+
 for (const [id, t] of Object.entries(tahlil)) {
   const asl = bilMuarrif.get(id);
   if (!asl) {
@@ -261,22 +280,8 @@ for (const [id, t] of Object.entries(tahlil)) {
     if (!muarrifat.has(m.qawl_id)) khata(masar, `qawl_id مجهول: ${m.qawl_id}`);
     if (!m.uqad || m.uqad.length < 2) khata(masar, "مسارٌ أقل من عقدتين");
 
-    /* الشجرة صياغةُ المحرِّر فلا تُقابَل بحروفها، لكن ما وضعه فيها بين
-       ﴿…﴾ أو «…» يُقرأ على أنه لفظُ آيةٍ أو حديث، فيجب أن يكون لفظَ
-       الكتاب لا روايتَه بالمعنى. وتُقطَّع الكلمةُ عند «…» لأن المحرِّر
-       يختصر الآية أحيانًا. */
-    const masdarMujarrad = MASADIR_MUJARRADA.get(qismWahda(id).muarrif);
-    (m.uqad || []).forEach((u, j) => {
-      for (const [, iqtibas] of String(u.matn || "").matchAll(/[﴿{«]([^﴾}»]+)[﴾}»]/g))
-        for (const qita of iqtibas.split(/…|\.\.\./)) {
-          const q = jarrid(qita);
-          if (q.length > 3 && !masdarMujarrad.includes(q))
-            khata(
-              `${masar}.uqad[${j}]`,
-              `ما بين علامتي الاقتباس ليس لفظَ الكتاب:\n      «${qita.trim().slice(0, 100)}»`,
-            );
-        }
-    });
+    // الشجرة صياغةُ المحرِّر فلا تُقابَل بحروفها — إلا ما بين علامتي الاقتباس
+    (m.uqad || []).forEach((u, j) => tafahhasIqtibasat(id, `${masar}.uqad[${j}]`, u.matn));
 
     /* عقدةُ النص أولُ ما يراه الطالب من مسلك القول، فلا تكون إحالةً مبهمة
        («الحديث نفسه»، «الآية نفسها») يُطلب معناها في موضعٍ آخر من الصفحة */
@@ -298,13 +303,26 @@ for (const [id, t] of Object.entries(tahlil)) {
       khata(id, "نصُّ السبب ينتهي بنقطتين، فيعد بتعدادٍ لا يأتي في اللوحة");
   }
 
+  /* التدريب: من ثلاثة أسئلة إلى خمسة، على ثلاثة أنواعٍ لا غير — تحريرِ محل
+     النزاع، والدليلِ، ووجهِ الدلالة — ولا تخلو مسألةٌ من سؤالٍ في تحرير المحل،
+     إذ هو أولُ ما ينبغي أن يُحسنه الطالب قبل النظر في الأدلة. */
   const tadrib = t.tadrib || [];
-  if (tadrib.length < 2) khata(id, "أقل من سؤالي تدريب");
+  if (tadrib.length < 3 || tadrib.length > 5)
+    khata(id, `أسئلة التدريب ${tadrib.length}، والمطلوب من ثلاثة إلى خمسة`);
+  if (tadrib.length && !tadrib.some((s) => s.naw === "تحرير"))
+    khata(id, "لا سؤال في تحرير محل النزاع");
   tadrib.forEach((s, i) => {
-    if (!s.khiyarat || s.khiyarat.length < 2)
-      khata(`${id}.tadrib[${i}]`, "سؤالٌ بأقل من خيارين");
+    const masar = `${id}.tadrib[${i}]`;
+    if (!ANWA_TADRIB.has(s.naw))
+      khata(masar, `نوع السؤال «${s.naw}» ليس من: ${[...ANWA_TADRIB].join("، ")}`);
+    if (!s.khiyarat || s.khiyarat.length < 3) khata(masar, "سؤالٌ بأقل من ثلاثة خيارات");
+    if (s.khiyarat && new Set(s.khiyarat).size !== s.khiyarat.length)
+      khata(masar, "خياراتٌ مكرَّرة");
     if (typeof s.sahih !== "number" || !s.khiyarat || !s.khiyarat[s.sahih])
-      khata(`${id}.tadrib[${i}]`, "رقم الجواب الصحيح خارج الخيارات");
+      khata(masar, "رقم الجواب الصحيح خارج الخيارات");
+    // الأسئلة من صياغة المحرِّر، لكن ما بين علامتي الاقتباس فيها لفظُ الكتاب
+    for (const nass of [s.suaal, ...(s.khiyarat || []), s.tafsir])
+      tafahhasIqtibasat(id, masar, nass);
   });
 }
 
